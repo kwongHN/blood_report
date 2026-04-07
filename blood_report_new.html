@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>血液检测报告汇总</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <style>
@@ -27,69 +27,81 @@
             color: var(--text);
             line-height: 1.6;
             min-height: 100vh;
+            -webkit-text-size-adjust: 100%;
         }
 
         .header {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
-            padding: 30px;
+            padding: 20px 15px;
             text-align: center;
         }
 
-        .header h1 { font-size: 28px; margin-bottom: 10px; }
-        .header p { opacity: 0.9; font-size: 14px; }
+        .header h1 { font-size: 20px; margin-bottom: 6px; }
+        .header p { opacity: 0.9; font-size: 12px; }
 
         .tabs {
             display: flex;
             background: white;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
         }
 
         .tab {
             flex: 1;
-            padding: 18px;
+            padding: 14px 8px;
             text-align: center;
             cursor: pointer;
             border: none;
             background: white;
-            font-size: 15px;
+            font-size: 13px;
             font-weight: 500;
             color: #666;
             transition: all 0.3s;
             border-bottom: 3px solid transparent;
+            white-space: nowrap;
         }
 
         .tab:hover { background: #f8f9fa; color: #667eea; }
         .tab.active { color: #667eea; border-bottom-color: #667eea; background: #f8f9fa; }
 
-        .container { max-width: 1200px; margin: 0 auto; padding: 30px 20px; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px 12px; }
+
         .tab-content { display: none; }
         .tab-content.active { display: block; }
 
         .summary-cards {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
-            margin-bottom: 30px;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            margin-bottom: 20px;
         }
 
         .card {
             background: var(--card-bg);
-            border-radius: 12px;
-            padding: 24px;
+            border-radius: 10px;
+            padding: 16px 12px;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+            text-align: center;
         }
 
-        .card-title { font-size: 13px; color: var(--text-muted); margin-bottom: 8px; }
+        .card-title {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+            line-height: 1.3;
+        }
 
-        .card-value { font-size: 32px; font-weight: 600; color: var(--text); }
+        .card-value { font-size: 22px; font-weight: 600; color: var(--text); }
 
         .card-indicator {
             display: inline-block;
-            padding: 2px 8px;
+            padding: 2px 6px;
             border-radius: 4px;
-            font-size: 12px;
-            margin-top: 8px;
+            font-size: 10px;
+            margin-top: 4px;
         }
 
         .card-indicator.low { background: #FFF3E0; color: #E65100; }
@@ -98,9 +110,9 @@
 
         .section {
             background: var(--card-bg);
-            border-radius: 12px;
-            padding: 24px;
-            margin-bottom: 24px;
+            border-radius: 10px;
+            padding: 16px;
+            margin-bottom: 16px;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
         }
 
@@ -108,36 +120,45 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 20px;
-            padding-bottom: 16px;
+            margin-bottom: 14px;
+            padding-bottom: 12px;
             border-bottom: 1px solid var(--border);
         }
 
-        .section-title { font-size: 18px; font-weight: 600; }
+        .section-title { font-size: 15px; font-weight: 600; }
 
         table { width: 100%; border-collapse: collapse; }
 
         th {
             background: #F8F9FB;
-            padding: 12px 16px;
+            padding: 10px 8px;
             text-align: center;
             font-weight: 600;
-            font-size: 13px;
+            font-size: 11px;
             color: var(--text-muted);
             border-bottom: 2px solid var(--border);
+            white-space: nowrap;
         }
 
-        td { padding: 14px 16px; text-align: center; border-bottom: 1px solid var(--border); font-size: 14px; }
+        td {
+            padding: 10px 8px;
+            text-align: center;
+            border-bottom: 1px solid var(--border);
+            font-size: 12px;
+            white-space: nowrap;
+        }
+
         tr:hover td { background: #FAFBFC; }
+        tr:last-child td { border-bottom: none; }
 
         .date-cell { font-weight: 500; color: var(--primary); }
         .value-cell { font-weight: 600; }
 
         .badge {
             display: inline-block;
-            padding: 2px 8px;
+            padding: 2px 6px;
             border-radius: 4px;
-            font-size: 12px;
+            font-size: 11px;
             font-weight: 500;
         }
 
@@ -147,31 +168,35 @@
 
         .charts-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-            gap: 24px;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
         }
 
         .chart-container {
             background: var(--card-bg);
-            border-radius: 12px;
-            padding: 24px;
+            border-radius: 10px;
+            padding: 16px;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
         }
 
         .chart-title {
-            font-size: 15px;
+            font-size: 12px;
             font-weight: 600;
-            margin-bottom: 16px;
+            margin-bottom: 10px;
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 6px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         .chart-title::before {
             content: '';
-            width: 4px;
-            height: 16px;
+            width: 3px;
+            height: 14px;
             border-radius: 2px;
+            flex-shrink: 0;
         }
 
         .chart-title.wbc::before { background: #4472C4; }
@@ -192,27 +217,28 @@
         .chart-title.cartcd4num::before { background: #3498DB; }
         .chart-title.cartcd8num::before { background: #F39C12; }
 
-        .chart-wrapper { position: relative; height: 280px; }
+        .chart-wrapper { position: relative; height: 200px; }
 
         .legend-info {
             display: flex;
-            gap: 24px;
-            margin-top: 16px;
-            padding-top: 16px;
+            gap: 12px;
+            margin-top: 10px;
+            padding-top: 10px;
             border-top: 1px solid var(--border);
+            flex-wrap: wrap;
         }
 
         .legend-item {
             display: flex;
             align-items: center;
-            gap: 6px;
-            font-size: 12px;
+            gap: 4px;
+            font-size: 10px;
             color: var(--text-muted);
         }
 
         .legend-dot {
-            width: 10px;
-            height: 10px;
+            width: 8px;
+            height: 8px;
             border-radius: 50%;
         }
 
@@ -220,12 +246,54 @@
         .legend-dot.normal { background: #E8F5E9; border: 1px solid #2E7D32; }
         .legend-dot.high { background: #FFEBEE; border: 1px solid #C62828; }
 
-        footer { text-align: center; padding: 24px; color: var(--text-muted); font-size: 13px; }
+        footer { text-align: center; padding: 16px; color: var(--text-muted); font-size: 12px; }
 
-        @media (max-width: 768px) {
+        /* 平板适配 */
+        @media (max-width: 900px) {
             .charts-grid { grid-template-columns: 1fr; }
-            table { font-size: 12px; }
-            th, td { padding: 10px 8px; }
+            .summary-cards { grid-template-columns: repeat(2, 1fr); }
+        }
+
+        /* 手机适配 */
+        @media (max-width: 600px) {
+            .header { padding: 15px 10px; }
+            .header h1 { font-size: 18px; }
+            .header p { font-size: 11px; }
+
+            .tab { padding: 12px 6px; font-size: 12px; }
+
+            .container { padding: 15px 10px; }
+
+            .summary-cards {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 10px;
+            }
+
+            .card { padding: 12px 8px; }
+            .card-title { font-size: 10px; }
+            .card-value { font-size: 18px; }
+
+            .section { padding: 14px; margin-bottom: 12px; }
+            .section-title { font-size: 14px; }
+
+            th, td { padding: 8px 4px; font-size: 10px; }
+            th .sub { display: none; }
+
+            .charts-grid { grid-template-columns: 1fr; gap: 12px; }
+            .chart-wrapper { height: 180px; }
+            .chart-container { padding: 12px; }
+
+            .chart-title { font-size: 11px; }
+
+            .legend-info { gap: 8px; }
+            .legend-item { font-size: 9px; }
+        }
+
+        /* 超小屏幕 */
+        @media (max-width: 380px) {
+            .summary-cards { grid-template-columns: 1fr 1fr; }
+            .card-value { font-size: 16px; }
+            .chart-wrapper { height: 150px; }
         }
     </style>
 </head>
@@ -246,22 +314,22 @@
         <div id="blood" class="tab-content active">
             <div class="summary-cards">
                 <div class="card">
-                    <div class="card-title">最新白细胞(WBC)</div>
+                    <div class="card-title">白细胞(WBC)</div>
                     <div class="card-value" id="wbc-latest">-</div>
                     <span class="card-indicator normal" id="wbc-status">-</span>
                 </div>
                 <div class="card">
-                    <div class="card-title">最新中性粒细胞(NE#)</div>
+                    <div class="card-title">中性粒细胞(NE#)</div>
                     <div class="card-value" id="ne-latest">-</div>
                     <span class="card-indicator normal" id="ne-status">-</span>
                 </div>
                 <div class="card">
-                    <div class="card-title">最新血小板(PLT)</div>
+                    <div class="card-title">血小板(PLT)</div>
                     <div class="card-value" id="plt-latest">-</div>
                     <span class="card-indicator normal" id="plt-status">-</span>
                 </div>
                 <div class="card">
-                    <div class="card-title">最新血红蛋白(HGB)</div>
+                    <div class="card-title">血红蛋白(HGB)</div>
                     <div class="card-value" id="hgb-latest">-</div>
                     <span class="card-indicator normal" id="hgb-status">-</span>
                 </div>
@@ -276,10 +344,10 @@
                         <thead>
                             <tr>
                                 <th>日期</th>
-                                <th>白细胞(WBC)<br><span style="font-weight:400;font-size:11px">参考值: 3.5-9.5</span></th>
-                                <th>中性粒细胞(NE#)<br><span style="font-weight:400;font-size:11px">参考值: 1.8-6.3</span></th>
-                                <th>血小板(PLT)<br><span style="font-weight:400;font-size:11px">参考值: 125-350</span></th>
-                                <th>血红蛋白(HGB)<br><span style="font-weight:400;font-size:11px">参考值: 115-150</span></th>
+                                <th>WBC<br><span class="sub" style="font-weight:400;font-size:9px">3.5-9.5</span></th>
+                                <th>NE#<br><span class="sub" style="font-weight:400;font-size:9px">1.8-6.3</span></th>
+                                <th>PLT<br><span class="sub" style="font-weight:400;font-size:9px">125-350</span></th>
+                                <th>HGB<br><span class="sub" style="font-weight:400;font-size:9px">115-150</span></th>
                             </tr>
                         </thead>
                         <tbody id="bloodTableBody"></tbody>
@@ -293,39 +361,39 @@
                 </div>
                 <div class="charts-grid">
                     <div class="chart-container">
-                        <div class="chart-title wbc">白细胞(WBC)趋势</div>
+                        <div class="chart-title wbc">白细胞(WBC)</div>
                         <div class="chart-wrapper"><canvas id="wbcChart"></canvas></div>
                         <div class="legend-info">
-                            <div class="legend-item"><span class="legend-dot low"></span>偏低 (&lt;3.5)</div>
+                            <div class="legend-item"><span class="legend-dot low"></span>&lt;3.5</div>
                             <div class="legend-item"><span class="legend-dot normal"></span>正常</div>
-                            <div class="legend-item"><span class="legend-dot high"></span>偏高 (&gt;9.5)</div>
+                            <div class="legend-item"><span class="legend-dot high"></span>&gt;9.5</div>
                         </div>
                     </div>
                     <div class="chart-container">
-                        <div class="chart-title ne">中性粒细胞(NE#)趋势</div>
+                        <div class="chart-title ne">中性粒细胞(NE#)</div>
                         <div class="chart-wrapper"><canvas id="neChart"></canvas></div>
                         <div class="legend-info">
-                            <div class="legend-item"><span class="legend-dot low"></span>偏低 (&lt;1.8)</div>
+                            <div class="legend-item"><span class="legend-dot low"></span>&lt;1.8</div>
                             <div class="legend-item"><span class="legend-dot normal"></span>正常</div>
-                            <div class="legend-item"><span class="legend-dot high"></span>偏高 (&gt;6.3)</div>
+                            <div class="legend-item"><span class="legend-dot high"></span>&gt;6.3</div>
                         </div>
                     </div>
                     <div class="chart-container">
-                        <div class="chart-title plt">血小板(PLT)趋势</div>
+                        <div class="chart-title plt">血小板(PLT)</div>
                         <div class="chart-wrapper"><canvas id="pltChart"></canvas></div>
                         <div class="legend-info">
-                            <div class="legend-item"><span class="legend-dot low"></span>偏低 (&lt;125)</div>
+                            <div class="legend-item"><span class="legend-dot low"></span>&lt;125</div>
                             <div class="legend-item"><span class="legend-dot normal"></span>正常</div>
-                            <div class="legend-item"><span class="legend-dot high"></span>偏高 (&gt;350)</div>
+                            <div class="legend-item"><span class="legend-dot high"></span>&gt;350</div>
                         </div>
                     </div>
                     <div class="chart-container">
-                        <div class="chart-title hgb">血红蛋白(HGB)趋势</div>
+                        <div class="chart-title hgb">血红蛋白(HGB)</div>
                         <div class="chart-wrapper"><canvas id="hgbChart"></canvas></div>
                         <div class="legend-info">
-                            <div class="legend-item"><span class="legend-dot low"></span>偏低 (&lt;115)</div>
+                            <div class="legend-item"><span class="legend-dot low"></span>&lt;115</div>
                             <div class="legend-item"><span class="legend-dot normal"></span>正常</div>
-                            <div class="legend-item"><span class="legend-dot high"></span>偏高 (&gt;150)</div>
+                            <div class="legend-item"><span class="legend-dot high"></span>&gt;150</div>
                         </div>
                     </div>
                 </div>
@@ -361,7 +429,7 @@
                         <thead>
                             <tr>
                                 <th>日期</th>
-                                <th>LDH值 (U/L)<br><span style="font-weight:400;font-size:11px">参考值: 120-250</span></th>
+                                <th>LDH (U/L)<br><span class="sub" style="font-weight:400;font-size:9px">参考值: 120-250</span></th>
                             </tr>
                         </thead>
                         <tbody id="ldhTableBody"></tbody>
@@ -374,13 +442,13 @@
                     <h2 class="section-title">LDH趋势图</h2>
                 </div>
                 <div class="charts-grid">
-                    <div class="chart-container" style="grid-column: 1 / -1;">
-                        <div class="chart-title ldh">乳酸脱氢酶(LDH)变化趋势</div>
+                    <div class="chart-container">
+                        <div class="chart-title ldh">乳酸脱氢酶(LDH)</div>
                         <div class="chart-wrapper"><canvas id="ldhChart"></canvas></div>
                         <div class="legend-info">
-                            <div class="legend-item"><span class="legend-dot low"></span>偏低 (&lt;120)</div>
+                            <div class="legend-item"><span class="legend-dot low"></span>&lt;120</div>
                             <div class="legend-item"><span class="legend-dot normal"></span>正常</div>
-                            <div class="legend-item"><span class="legend-dot high"></span>偏高 (&gt;250)</div>
+                            <div class="legend-item"><span class="legend-dot high"></span>&gt;250</div>
                         </div>
                     </div>
                 </div>
@@ -411,11 +479,11 @@
                         <div class="chart-wrapper"><canvas id="cartTPctChart"></canvas></div>
                     </div>
                     <div class="chart-container">
-                        <div class="chart-title cd4pct">辅助性T细胞(CD3+CD4+T%)</div>
+                        <div class="chart-title cd4pct">辅助T细胞(CD4+)</div>
                         <div class="chart-wrapper"><canvas id="cartCD4PctChart"></canvas></div>
                     </div>
                     <div class="chart-container">
-                        <div class="chart-title cd8pct">杀伤性T细胞(CD3+CD8+T%)</div>
+                        <div class="chart-title cd8pct">杀伤T细胞(CD8+)</div>
                         <div class="chart-wrapper"><canvas id="cartCD8PctChart"></canvas></div>
                     </div>
                 </div>
@@ -427,15 +495,15 @@
                 </div>
                 <div class="charts-grid">
                     <div class="chart-container">
-                        <div class="chart-title tnum">总T淋巴细胞计数(T#)</div>
+                        <div class="chart-title tnum">总T细胞(T#)</div>
                         <div class="chart-wrapper"><canvas id="cartTNumChart"></canvas></div>
                     </div>
                     <div class="chart-container">
-                        <div class="chart-title cd4num">辅助/诱导T淋巴细胞计数(CD4+T#)</div>
+                        <div class="chart-title cd4num">辅助T细胞(CD4+#)</div>
                         <div class="chart-wrapper"><canvas id="cartCD4NumChart"></canvas></div>
                     </div>
                     <div class="chart-container">
-                        <div class="chart-title cd8num">抑制/细胞毒T淋巴细胞计数(CD8+T#)</div>
+                        <div class="chart-title cd8num">杀伤T细胞(CD8+#)</div>
                         <div class="chart-wrapper"><canvas id="cartCD8NumChart"></canvas></div>
                     </div>
                 </div>
@@ -447,15 +515,15 @@
                 </div>
                 <div class="charts-grid">
                     <div class="chart-container">
-                        <div class="chart-title cartpct">CarT-T细胞(CD3+CarT%)</div>
+                        <div class="chart-title cartpct">CarT-T(CD3+CarT%)</div>
                         <div class="chart-wrapper"><canvas id="cartCarTPctChart"></canvas></div>
                     </div>
                     <div class="chart-container">
-                        <div class="chart-title cartcd4pct">CD4+Car-T细胞(CD4+CarT%)</div>
+                        <div class="chart-title cartcd4pct">CD4+Car-T</div>
                         <div class="chart-wrapper"><canvas id="cartCD4CarTPctChart"></canvas></div>
                     </div>
                     <div class="chart-container">
-                        <div class="chart-title cartcd8pct">CD8+Car-T细胞(CD8+CarT%)</div>
+                        <div class="chart-title cartcd8pct">CD8+Car-T</div>
                         <div class="chart-wrapper"><canvas id="cartCD8CarTPctChart"></canvas></div>
                     </div>
                 </div>
@@ -467,15 +535,15 @@
                 </div>
                 <div class="charts-grid">
                     <div class="chart-container">
-                        <div class="chart-title cartnum">CarT-T细胞计数(CD3+CarT#)</div>
+                        <div class="chart-title cartnum">CarT-T#</div>
                         <div class="chart-wrapper"><canvas id="cartCarTNumChart"></canvas></div>
                     </div>
                     <div class="chart-container">
-                        <div class="chart-title cartcd4num">CD4+Car-T细胞计数(CD4+CarT#)</div>
+                        <div class="chart-title cartcd4num">CD4+Car-T#</div>
                         <div class="chart-wrapper"><canvas id="cartCD4CarTNumChart"></canvas></div>
                     </div>
                     <div class="chart-container">
-                        <div class="chart-title cartcd8num">CD8+Car-T细胞计数(CD8+CarT#)</div>
+                        <div class="chart-title cartcd8num">CD8+Car-T#</div>
                         <div class="chart-wrapper"><canvas id="cartCD8CarTNumChart"></canvas></div>
                     </div>
                 </div>
@@ -534,7 +602,6 @@
             { date: "2026.04.03", value: 364 }
         ];
 
-        // Cart细胞数据 (12项指标)
         var cartDates = ["2026-02-04", "2026-02-06", "2026-02-09", "2026-02-13", "2026-02-25", "2025-03-05", "2025-03-17", "2025-03-27"];
         var cartData = {
             tPct:      [70.31, 77.02, 81.66, 96.98, 96.05, 96.44, 97.79, 98.60],
@@ -558,6 +625,7 @@
                 document.querySelectorAll('.tab-content').forEach(function(c) { c.classList.remove('active'); });
                 this.classList.add('active');
                 document.getElementById(this.dataset.tab).classList.add('active');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
             });
         });
 
@@ -601,8 +669,8 @@
                         borderWidth: 2,
                         fill: true,
                         tension: 0.3,
-                        pointRadius: 3,
-                        pointHoverRadius: 6
+                        pointRadius: 2,
+                        pointHoverRadius: 5
                     }]
                 },
                 options: {
@@ -610,8 +678,8 @@
                     maintainAspectRatio: false,
                     plugins: { legend: { display: false } },
                     scales: {
-                        x: { grid: { display: false }, ticks: { maxRotation: 45, minRotation: 45 } },
-                        y: { beginAtZero: false, grid: { color: '#F0F0F0' } }
+                        x: { grid: { display: false }, ticks: { maxRotation: 45, minRotation: 45, font: { size: 10 } } },
+                        y: { beginAtZero: false, grid: { color: '#F0F0F0' }, ticks: { font: { size: 10 } } }
                     }
                 }
             });
@@ -664,8 +732,7 @@
         var change = ((ldhLatest.value - ldhFirst.value) / ldhFirst.value * 100).toFixed(1);
         document.getElementById('ldh-change').textContent = change + '%';
 
-        var ldhStatus = getBloodStatus(ldhLatest.value, 'wbc'); // 借用bloodRanges的逻辑
-        document.getElementById('ldh-status').className = getCardIndicatorClass(ldhStatus === 'normal' ? 'high' : 'normal');
+        document.getElementById('ldh-status').className = getCardIndicatorClass(ldhLatest.value > 250 ? 'high' : ldhLatest.value < 120 ? 'low' : 'normal');
         document.getElementById('ldh-status').textContent = ldhLatest.value > 250 ? '偏高' : ldhLatest.value < 120 ? '偏低' : '正常';
 
         var ldhTbody = document.getElementById('ldhTableBody');
@@ -679,20 +746,20 @@
         createLineChart('ldhChart', 'LDH (U/L)', ldhData.map(function(d) { return d.date; }), ldhData.map(function(d) { return d.value; }), '#667eea');
 
         // ==================== Cart细胞渲染 ====================
-        var cartHeaders = ['检测项目', '单位', '参考值范围'].concat(cartDates);
+        var cartHeaders = ['检测项目', '单位', '参考值'].concat(cartDates);
         var cartRows = [
             ['总T细胞(T%)', '%', '51~85'].concat(cartData.tPct),
-            ['辅助性T细胞(CD3+CD4+T%)', '%', '33~58'].concat(cartData.cd4Pct),
-            ['杀伤性T细胞(CD3+CD8+T%)', '%', '9~39'].concat(cartData.cd8Pct),
-            ['总T淋巴细胞计数(T#)', '个/µL', '723~2737'].concat(cartData.tNum),
-            ['辅助/诱导T淋巴细胞计数(CD4+T#)', '个/µL', '404~1612'].concat(cartData.cd4Num),
-            ['抑制/细胞毒T淋巴细胞计数(CD8+T#)', '个/µL', '220~1129'].concat(cartData.cd8Num),
-            ['CarT-T细胞(CD3+CarT%)', '%', '0~0'].concat(cartData.carTPct),
-            ['CD4+Car-T细胞(CD4+CarT%)', '%', '0~0'].concat(cartData.cd4CarTPct),
-            ['CD8+Car-T细胞(CD8+CarT%)', '%', '0~0'].concat(cartData.cd8CarTPct),
-            ['CarT-T细胞计数(CD3+CarT#)', '个/µL', '0~0'].concat(cartData.carTNum),
-            ['CD4+Car-T细胞计数(CD4+CarT#)', '个/µL', '0~0'].concat(cartData.cd4CarTNum),
-            ['CD8+Car-T细胞计数(CD8+CarT#)', '个/µL', '0~0'].concat(cartData.cd8CarTNum)
+            ['辅助T细胞(CD4+%)', '%', '33~58'].concat(cartData.cd4Pct),
+            ['杀伤T细胞(CD8+%)', '%', '9~39'].concat(cartData.cd8Pct),
+            ['总T细胞(T#)', '个/µL', '723~2737'].concat(cartData.tNum),
+            ['辅助T细胞(CD4+#)', '个/µL', '404~1612'].concat(cartData.cd4Num),
+            ['杀伤T细胞(CD8+#)', '个/µL', '220~1129'].concat(cartData.cd8Num),
+            ['CarT-T(CD3+CarT%)', '%', '0~0'].concat(cartData.carTPct),
+            ['CD4+Car-T(%)', '%', '0~0'].concat(cartData.cd4CarTPct),
+            ['CD8+Car-T(%)', '%', '0~0'].concat(cartData.cd8CarTPct),
+            ['CarT-T#', '个/µL', '0~0'].concat(cartData.carTNum),
+            ['CD4+Car-T#', '个/µL', '0~0'].concat(cartData.cd4CarTNum),
+            ['CD8+Car-T#', '个/µL', '0~0'].concat(cartData.cd8CarTNum)
         ];
 
         var cartThead = document.querySelector('#cartTable thead');
@@ -716,28 +783,21 @@
             cartTbody.appendChild(tr);
         });
 
-        // Cart细胞图表 - 12项指标分类绘制
+        // Cart细胞图表
         var cartShortDates = cartDates.map(function(d) { return d.substring(5); });
 
-        // T细胞亚群百分比
         createLineChart('cartTPctChart', '总T细胞(T%)', cartShortDates, cartData.tPct, '#4472C4');
-        createLineChart('cartCD4PctChart', '辅助性T细胞(CD3+CD4+T%)', cartShortDates, cartData.cd4Pct, '#70AD47');
-        createLineChart('cartCD8PctChart', '杀伤性T细胞(CD3+CD8+T%)', cartShortDates, cartData.cd8Pct, '#ED7D31');
-
-        // T细胞绝对计数
-        createLineChart('cartTNumChart', '总T淋巴细胞计数(T#)', cartShortDates, cartData.tNum, '#9B59B6');
-        createLineChart('cartCD4NumChart', '辅助/诱导T淋巴细胞计数(CD4+T#)', cartShortDates, cartData.cd4Num, '#70AD47');
-        createLineChart('cartCD8NumChart', '抑制/细胞毒T淋巴细胞计数(CD8+T#)', cartShortDates, cartData.cd8Num, '#ED7D31');
-
-        // CarT-T细胞百分比
-        createLineChart('cartCarTPctChart', 'CarT-T细胞(CD3+CarT%)', cartShortDates, cartData.carTPct, '#E74C3C');
-        createLineChart('cartCD4CarTPctChart', 'CD4+Car-T细胞(CD4+CarT%)', cartShortDates, cartData.cd4CarTPct, '#3498DB');
-        createLineChart('cartCD8CarTPctChart', 'CD8+Car-T细胞(CD8+CarT%)', cartShortDates, cartData.cd8CarTPct, '#F39C12');
-
-        // CarT-T细胞绝对计数
-        createLineChart('cartCarTNumChart', 'CarT-T细胞计数(CD3+CarT#)', cartShortDates, cartData.carTNum, '#E74C3C');
-        createLineChart('cartCD4CarTNumChart', 'CD4+Car-T细胞计数(CD4+CarT#)', cartShortDates, cartData.cd4CarTNum, '#3498DB');
-        createLineChart('cartCD8CarTNumChart', 'CD8+Car-T细胞计数(CD8+CarT#)', cartShortDates, cartData.cd8CarTNum, '#F39C12');
+        createLineChart('cartCD4PctChart', '辅助T细胞(CD4+%)', cartShortDates, cartData.cd4Pct, '#70AD47');
+        createLineChart('cartCD8PctChart', '杀伤T细胞(CD8+%)', cartShortDates, cartData.cd8Pct, '#ED7D31');
+        createLineChart('cartTNumChart', '总T细胞(T#)', cartShortDates, cartData.tNum, '#9B59B6');
+        createLineChart('cartCD4NumChart', '辅助T细胞(CD4+#)', cartShortDates, cartData.cd4Num, '#70AD47');
+        createLineChart('cartCD8NumChart', '杀伤T细胞(CD8+#)', cartShortDates, cartData.cd8Num, '#ED7D31');
+        createLineChart('cartCarTPctChart', 'CarT-T(CD3+CarT%)', cartShortDates, cartData.carTPct, '#E74C3C');
+        createLineChart('cartCD4CarTPctChart', 'CD4+Car-T(%)', cartShortDates, cartData.cd4CarTPct, '#3498DB');
+        createLineChart('cartCD8CarTPctChart', 'CD8+Car-T(%)', cartShortDates, cartData.cd8CarTPct, '#F39C12');
+        createLineChart('cartCarTNumChart', 'CarT-T#', cartShortDates, cartData.carTNum, '#E74C3C');
+        createLineChart('cartCD4CarTNumChart', 'CD4+Car-T#', cartShortDates, cartData.cd4CarTNum, '#3498DB');
+        createLineChart('cartCD8CarTNumChart', 'CD8+Car-T#', cartShortDates, cartData.cd8CarTNum, '#F39C12');
     })();
     </script>
 </body>
