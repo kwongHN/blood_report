@@ -94,6 +94,12 @@
             line-height: 1.3;
         }
 
+        .card-date {
+            font-size: 10px;
+            color: #999;
+            margin-bottom: 4px;
+        }
+
         .card-value { font-size: 22px; font-weight: 600; color: var(--text); }
 
         .card-indicator {
@@ -248,6 +254,46 @@
 
         footer { text-align: center; padding: 16px; color: var(--text-muted); font-size: 12px; }
 
+        /* Cart表格固定列 */
+        .table-wrapper {
+            overflow-x: auto;
+        }
+
+        .table-fixed {
+            position: relative;
+        }
+
+        .table-fixed table {
+            min-width: 800px;
+        }
+
+        .table-fixed th:first-child,
+        .table-fixed td:first-child {
+            position: sticky;
+            left: 0;
+            background: #F8F9FB;
+            z-index: 2;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+        }
+
+        .table-fixed th:nth-child(2),
+        .table-fixed td:nth-child(2) {
+            position: sticky;
+            left: 80px;
+            background: #F8F9FB;
+            z-index: 2;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+        }
+
+        .table-fixed th:nth-child(3),
+        .table-fixed td:nth-child(3) {
+            position: sticky;
+            left: 150px;
+            background: #F8F9FB;
+            z-index: 2;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+        }
+
         /* 平板适配 */
         @media (max-width: 900px) {
             .charts-grid { grid-template-columns: 1fr; }
@@ -287,6 +333,28 @@
 
             .legend-info { gap: 8px; }
             .legend-item { font-size: 9px; }
+
+            /* 手机上固定列 */
+            .table-fixed th:first-child,
+            .table-fixed td:first-child {
+                position: sticky;
+                left: 0;
+                min-width: 80px;
+            }
+
+            .table-fixed th:nth-child(2),
+            .table-fixed td:nth-child(2) {
+                position: sticky;
+                left: 80px;
+                min-width: 60px;
+            }
+
+            .table-fixed th:nth-child(3),
+            .table-fixed td:nth-child(3) {
+                position: sticky;
+                left: 140px;
+                min-width: 70px;
+            }
         }
 
         /* 超小屏幕 */
@@ -314,21 +382,25 @@
         <div id="blood" class="tab-content active">
             <div class="summary-cards">
                 <div class="card">
+                    <div class="card-date" id="wbc-date">最新：-</div>
                     <div class="card-title">白细胞(WBC)</div>
                     <div class="card-value" id="wbc-latest">-</div>
                     <span class="card-indicator normal" id="wbc-status">-</span>
                 </div>
                 <div class="card">
+                    <div class="card-date" id="ne-date">最新：-</div>
                     <div class="card-title">中性粒细胞(NE#)</div>
                     <div class="card-value" id="ne-latest">-</div>
                     <span class="card-indicator normal" id="ne-status">-</span>
                 </div>
                 <div class="card">
+                    <div class="card-date" id="plt-date">最新：-</div>
                     <div class="card-title">血小板(PLT)</div>
                     <div class="card-value" id="plt-latest">-</div>
                     <span class="card-indicator normal" id="plt-status">-</span>
                 </div>
                 <div class="card">
+                    <div class="card-date" id="hgb-date">最新：-</div>
                     <div class="card-title">血红蛋白(HGB)</div>
                     <div class="card-value" id="hgb-latest">-</div>
                     <span class="card-indicator normal" id="hgb-status">-</span>
@@ -404,17 +476,20 @@
         <div id="ldh" class="tab-content">
             <div class="summary-cards">
                 <div class="card">
-                    <div class="card-title">最新LDH值</div>
+                    <div class="card-date" id="ldh-date">最新：-</div>
+                    <div class="card-title">LDH值</div>
                     <div class="card-value" id="ldh-latest">-</div>
                     <span class="card-indicator" id="ldh-status">-</span>
                 </div>
                 <div class="card">
+                    <div class="card-date">首次：2026.01.19</div>
                     <div class="card-title">首次检测值</div>
                     <div class="card-value" id="ldh-first">-</div>
                     <span class="card-indicator">首次</span>
                 </div>
                 <div class="card">
-                    <div class="card-title">下降幅度</div>
+                    <div class="card-date">下降</div>
+                    <div class="card-title">变化幅度</div>
                     <div class="card-value" id="ldh-change">-</div>
                     <span class="card-indicator normal">↓</span>
                 </div>
@@ -461,7 +536,7 @@
                 <div class="section-header">
                     <h2 class="section-title">Cart细胞检测数据</h2>
                 </div>
-                <div style="overflow-x:auto;">
+                <div class="table-fixed">
                     <table id="cartTable">
                         <thead></thead>
                         <tbody></tbody>
@@ -687,6 +762,13 @@
 
         // ==================== 血常规渲染 ====================
         var latest = bloodData[bloodData.length - 1];
+
+        // 显示最新日期
+        document.getElementById('wbc-date').textContent = '最新：' + latest.date;
+        document.getElementById('ne-date').textContent = '最新：' + latest.date;
+        document.getElementById('plt-date').textContent = '最新：' + latest.date;
+        document.getElementById('hgb-date').textContent = '最新：' + latest.date;
+
         document.getElementById('wbc-latest').textContent = latest.wbc;
         document.getElementById('ne-latest').textContent = latest.ne;
         document.getElementById('plt-latest').textContent = latest.plt;
@@ -727,6 +809,8 @@
         // ==================== LDH渲染 ====================
         var ldhLatest = ldhData[ldhData.length - 1];
         var ldhFirst = ldhData[0];
+
+        document.getElementById('ldh-date').textContent = '最新：' + ldhLatest.date;
         document.getElementById('ldh-latest').textContent = ldhLatest.value;
         document.getElementById('ldh-first').textContent = ldhFirst.value;
         var change = ((ldhLatest.value - ldhFirst.value) / ldhFirst.value * 100).toFixed(1);
