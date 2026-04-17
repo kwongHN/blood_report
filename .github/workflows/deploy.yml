@@ -33,15 +33,15 @@ jobs:
           cd blood-report-vue
           npm ci
 
-      - name: Build
-        run: |
-          cd blood-report-vue
-          npm run build
-
       - name: Generate report.json
         run: |
           cd blood-report-vue
           python scripts/generate_report_json.py ../../血常规报告汇总.xlsx ../../LDH_Cart.xlsx src/data/report.json
+
+      - name: Build
+        run: |
+          cd blood-report-vue
+          npm run build
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
