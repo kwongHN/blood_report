@@ -72,7 +72,7 @@ def read_ldh_cart_data(excel_path):
 
         # 读取LDH数据 (查找包含LDH的sheet或列)
         if 'LDH' in sheet_name.upper() or '乳酸' in sheet_name:
-            for row in ws.iter_rows(min_row=2, values_only=True):
+            for row in ws.iter_rows(min_row=3, values_only=True):  # 从第3行开始，跳过标题
                 if row[0]:
                     try:
                         date_val = str(row[0])[:10] if isinstance(row[0], str) else str(row[0])
@@ -83,37 +83,59 @@ def read_ldh_cart_data(excel_path):
 
         # 读取Cart数据 (查找包含CD3、CarT的sheet或列)
         if 'CAR' in sheet_name.upper() or 'CART' in sheet_name or 'T细胞' in sheet_name:
-            # 第一行通常是日期
-            headers = [str(c)[:10] if c else '' for c in next(ws.iter_rows(min_row=1, max_row=1, values_only=True))]
+            # 第二行是日期（列标题）
+            date_row = list(ws.iter_rows(min_row=2, max_row=2, values_only=True))[0]
+            headers = [str(c) if c else '' for c in date_row]
 
-            # 查找日期列
+            # 查找日期列 - 包含年份的列
             date_indices = []
             for i, h in enumerate(headers):
-                if any(x in h.upper() for x in ['2026', '2025', '日期', 'DATE']):
+                h_upper = h.upper()
+                if any(x in h_upper for x in ['2026', '2025', '日期', 'DATE']):
                     date_indices.append(i)
 
-            if date_indices:
-                # 使用第一个日期作为参考，其余是数据列
-                first_date_idx = date_indices[0]
-                if len(date_indices) > 1:
-                    cart_dates = [headers[i] for i in date_indices[1:] if headers[i]]
+            # 提取日期（清理字符串）
+            cart_dates = []
+            for i in date_indices:
+                h = headers[i]
+                # 提取日期部分（取前10个字符或找到的第一个日期模式）
+                import re
+                match = re.search(r'\d{4}[-.]?\d{2}[-.]?\d{2}', h)
+                if match:
+                    date_str = match.group().replace('.', '-')
+                    cart_dates.append(date_str[:10])
+                elif len(h) >= 10:
+                    cart_dates.append(h[:10])
 
-                # 读取数据行
-                for row in ws.iter_rows(min_row=2, values_only=True):
-                    if row[0]:  # 第一列是指标名称
-                        indicator = str(row[0]).strip()
-                        key_map = {
-                            'T%': 'tPct', 'CD4+%': 'cd4Pct', 'CD8+%': 'cd8Pct',
-                            'T#': 'tNum', 'CD4+#': 'cd4Num', 'CD8+#': 'cd8Num',
-                            'CAR-T%': 'carTPct', 'CD4+CAR-T%': 'cd4CarTPct', 'CD8+CAR-T%': 'cd8CarTPct',
-                            'CAR-T#': 'carTNum', 'CD4+CAR-T#': 'cd4CarTNum', 'CD8+CAR-T#': 'cd8CarTNum'
-                        }
+            # 读取数据行（从第三行开始）
+            for row in ws.iter_rows(min_row=3, values_only=True):
+                if row[0]:  # 第一列是指标名称
+                    indicator = str(row[0]).strip()
+                    key_map = {
+                        '总T细胞(T%': 'tPct', '辅助性T细胞(CD3+CD4+T%)': 'cd4Pct', '杀伤性T细胞(CD3+CD8+T%)': 'cd8Pct',
+                        '总T淋巴细胞计数(T#)': 'tNum', '辅助/诱导T淋巴细胞计数(CD4+T#)': 'cd4Num', '抑制/细胞毒T淋巴细胞计数(CD8+T#)': 'cd8Num',
+                        'CarT-T细胞(CD3+CarT%)': 'carTPct', 'CD4+Car-T细胞(CD4+CarT%)': 'cd4CarTPct', 'CD8+Car-T细胞(CD8+CarT%)': 'cd8CarTPct',
+                        'CarT-T细胞计数(CD3+CarT#)': 'carTNum', 'CD4+Car-T细胞计数(CD4+CarT#)': 'cd4CarTNum', 'CD8+Car-T细胞计数(CD8+CarT#)': 'cd8CarTNum'
+                    }
 
-                        for k, v in key_map.items():
-                            if k.upper() in indicator.upper():
-                                if len(date_indices) > 1:
-                                    cart_data[v] = [float(row[i]) if row[i] is not None else 0 for i in date_indices[1:]]
-                                break
+                    def clean_value(val):
+                        """清理数值，移除箭头等符号"""
+                        if val is None:
+                            return 0
+                        if isinstance(val, (int, float)):
+                            return float(val)
+                        # 移除 ↑、↓ 等符号
+                        import re
+                        cleaned = re.sub(r'[↑↓]', '', str(val))
+                        try:
+                            return float(cleaned)
+                        except:
+                            return 0
+
+                    for k, v in key_map.items():
+                        if k.upper() in indicator.upper():
+                            cart_data[v] = [clean_value(row[i]) for i in date_indices]
+                            break
 
     return ldh_records, cart_dates, cart_data
 

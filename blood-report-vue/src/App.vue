@@ -57,7 +57,7 @@ const ldhData = computed(() => reportData.ldh.records)
 
 // Cart数据
 const cartDates = computed(() => reportData.cart.dates)
-const cartData = computed(() => reportData.cart)
+const cartData = computed(() => reportData.cart.records)
 </script>
 
 <style>
