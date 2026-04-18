@@ -24,16 +24,19 @@
   position: sticky;
   top: 0;
   z-index: 100;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .tab {
   flex: 1;
-  padding: 14px 8px;
+  min-width: 70px;
+  padding: 12px 6px;
   text-align: center;
   cursor: pointer;
   border: none;
   background: white;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 500;
   color: #666;
   transition: all 0.3s;
@@ -136,19 +139,21 @@
 /* ==================== Data Table ==================== */
 .table-wrapper {
   overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 table {
   width: 100%;
   border-collapse: collapse;
+  min-width: 300px;
 }
 
 th {
   background: #F8F9FB;
-  padding: 10px 8px;
+  padding: 10px 6px;
   text-align: center;
   font-weight: 600;
-  font-size: 11px;
+  font-size: 10px;
   color: var(--text-muted);
   border-bottom: 2px solid var(--border);
   white-space: nowrap;
@@ -160,10 +165,10 @@ th .sub {
 }
 
 td {
-  padding: 10px 8px;
+  padding: 8px 6px;
   text-align: center;
   border-bottom: 1px solid var(--border);
-  font-size: 12px;
+  font-size: 11px;
   white-space: nowrap;
 }
 
@@ -231,7 +236,7 @@ tr:last-child td {
 .charts-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: var(--spacing-lg);
+  gap: var(--spacing-md);
 }
 
 .wide-chart {
@@ -240,8 +245,8 @@ tr:last-child td {
 
 .chart-container {
   background: var(--card-bg);
-  border-radius: var(--radius-lg);
-  padding: var(--spacing-lg);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-md);
   box-shadow: var(--shadow-sm);
 }
 
@@ -286,7 +291,7 @@ tr:last-child td {
 
 .chart-wrapper {
   position: relative;
-  height: 200px;
+  height: 180px;
 }
 
 .legend-info {
@@ -333,6 +338,35 @@ tr:last-child td {
   .table-fixed td:first-child {
     position: sticky;
     left: 0;
-    min-width: 80px;
+    min-width: 60px;
+    max-width: 80px;
+    font-size: 10px;
+  }
+
+  .table-fixed th:not(:first-child),
+  .table-fixed td:not(:first-child) {
+    min-width: 50px;
+    font-size: 10px;
+  }
+
+  .summary-cards {
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--spacing-sm);
+  }
+
+  .card {
+    padding: 10px 6px;
+  }
+
+  .card-title {
+    font-size: 9px;
+  }
+
+  .card-value {
+    font-size: 16px;
+  }
+
+  .card-date {
+    font-size: 8px;
   }
 }
