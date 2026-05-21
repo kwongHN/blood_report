@@ -21,8 +21,8 @@
         :cart-dates="cartDates"
         :cart-data="cartData"
       />
-      <AnalysisTab
-        v-show="activeTab === 'analysis'"
+      <TumorSizeTab
+        v-show="activeTab === 'tumor'"
       />
     </div>
   </div>
@@ -35,7 +35,7 @@ import AppTabs from './components/common/AppTabs.vue'
 import BloodTab from './components/blood/BloodTab.vue'
 import LdhTab from './components/ldh/LdhTab.vue'
 import CartTab from './components/cart/CartTab.vue'
-import AnalysisTab from './components/analysis/AnalysisTab.vue'
+import TumorSizeTab from './components/tumor/TumorSizeTab.vue'
 
 // 导入数据
 import reportData from './data/report.json'
@@ -44,7 +44,7 @@ const tabs = [
   { id: 'blood', label: '血常规报告' },
   { id: 'ldh', label: 'LDH数据' },
   { id: 'cart', label: 'Cart细胞' },
-  { id: 'analysis', label: '报告解析' }
+  { id: 'tumor', label: '肿瘤大小' }
 ]
 
 const activeTab = ref('blood')
