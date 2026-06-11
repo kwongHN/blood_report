@@ -8,12 +8,12 @@
     </SectionCard>
 
     <div class="tumor-summary">
-      <p>📊 <strong>趋势总结：</strong>肿瘤尺寸从 84mm×63mm×89mm 缩小至 43mm×61mm×58mm，整体呈持续缩小趋势。</p>
+      <p>📊 <strong>趋势总结：</strong>肿瘤尺寸从 84mm×63mm×89mm 缩小至 36mm×69mm×70mm，整体呈持续缩小趋势。</p>
     </div>
 
     <div class="tumor-footer">
       <p>📝 <strong>数据来源：</strong>PET-CT / 增强CT 报告</p>
-      <p>📅 <strong>更新日期：</strong>2026-05-07</p>
+      <p>📅 <strong>更新日期：</strong>2026-06-10</p>
     </div>
   </div>
 </template>
@@ -33,7 +33,8 @@ const tumorData = [
   { date: '2026.02.25', method: 'PET-CT', size: '82mm×50mm×82mm' },
   { date: '2026.03.27', method: 'PET-CT', size: '73mm×47mm×79mm' },
   { date: '2026.04.27', method: 'PET-CT', size: '68mm×45mm×75mm' },
-  { date: '2026.05.07', method: '增强CT', size: '43mm×61mm×58mm' }
+  { date: '2026.05.07', method: '增强CT', size: '43mm×61mm×58mm' },
+  { date: '2026.06.10', method: '增强CT', size: '36mm×69mm×70mm' }
 ]
 </script>
 
