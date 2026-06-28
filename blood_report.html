@@ -1,0 +1,1372 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>血液检测报告汇总</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <style>
+        :root {
+            --primary: #4472C4;
+            --primary-light: #5B8DEF;
+            --success: #70AD47;
+            --warning: #ED7D31;
+            --danger: #FF4444;
+            --bg: #F5F7FA;
+            --card-bg: #FFFFFF;
+            --text: #333333;
+            --text-muted: #666666;
+            --border: #E1E5EB;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            min-height: 100vh;
+            -webkit-text-size-adjust: 100%;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px 15px;
+            text-align: center;
+        }
+
+        .header h1 { font-size: 20px; margin-bottom: 6px; }
+        .header p { opacity: 0.9; font-size: 12px; }
+
+        .tabs {
+            display: flex;
+            background: white;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 14px 8px;
+            text-align: center;
+            cursor: pointer;
+            border: none;
+            background: white;
+            font-size: 13px;
+            font-weight: 500;
+            color: #666;
+            transition: all 0.3s;
+            border-bottom: 3px solid transparent;
+            white-space: nowrap;
+        }
+
+        .tab:hover { background: #f8f9fa; color: #667eea; }
+        .tab.active { color: #667eea; border-bottom-color: #667eea; background: #f8f9fa; }
+
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px 12px; }
+
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        .summary-cards {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 10px;
+            padding: 14px 10px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+            text-align: center;
+        }
+
+        .card-title {
+            font-size: 10px;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+            line-height: 1.3;
+        }
+
+        .card-date {
+            font-size: 9px;
+            color: #999;
+            margin-bottom: 4px;
+        }
+
+        .card-value { font-size: 18px; font-weight: 600; color: var(--text); }
+
+        .card-indicator {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 10px;
+            margin-top: 4px;
+        }
+
+        .card-indicator.low { background: #FFF3E0; color: #E65100; }
+        .card-indicator.normal { background: #E8F5E9; color: #2E7D32; }
+        .card-indicator.high { background: #FFEBEE; color: #C62828; }
+
+        .section {
+            background: var(--card-bg);
+            border-radius: 10px;
+            padding: 16px;
+            margin-bottom: 16px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 14px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .section-title { font-size: 15px; font-weight: 600; }
+
+        table { width: 100%; border-collapse: collapse; }
+
+        th {
+            background: #F8F9FB;
+            padding: 10px 8px;
+            text-align: center;
+            font-weight: 600;
+            font-size: 11px;
+            color: var(--text-muted);
+            border-bottom: 2px solid var(--border);
+            white-space: nowrap;
+        }
+
+        td {
+            padding: 10px 8px;
+            text-align: center;
+            border-bottom: 1px solid var(--border);
+            font-size: 12px;
+            white-space: nowrap;
+        }
+
+        tr:hover td { background: #FAFBFC; }
+        tr:last-child td { border-bottom: none; }
+
+        .date-cell { font-weight: 500; color: var(--primary); }
+        .value-cell { font-weight: 600; }
+
+        .badge {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 500;
+        }
+
+        .badge-low { background: #FFF3E0; color: #E65100; }
+        .badge-normal { background: #E8F5E9; color: #2E7D32; }
+        .badge-high { background: #FFEBEE; color: #C62828; }
+
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+        }
+
+        .wide-chart { grid-column: span 2; }
+
+        .chart-container {
+            background: var(--card-bg);
+            border-radius: 10px;
+            padding: 16px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+        }
+
+        .chart-title {
+            font-size: 12px;
+            font-weight: 600;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .chart-title::before {
+            content: '';
+            width: 3px;
+            height: 14px;
+            border-radius: 2px;
+            flex-shrink: 0;
+        }
+
+        .chart-title.wbc::before { background: #4472C4; }
+        .chart-title.ne::before { background: #ED7D31; }
+        .chart-title.ly::before { background: #9B59B6; }
+        .chart-title.plt::before { background: #70AD47; }
+        .chart-title.hgb::before { background: #FF4444; }
+        .chart-title.ldh::before { background: #667eea; }
+        .chart-title.tpct::before { background: #4472C4; }
+        .chart-title.cd4pct::before { background: #70AD47; }
+        .chart-title.cd8pct::before { background: #ED7D31; }
+        .chart-title.tnum::before { background: #9B59B6; }
+        .chart-title.cd4num::before { background: #70AD47; }
+        .chart-title.cd8num::before { background: #ED7D31; }
+        .chart-title.cartpct::before { background: #E74C3C; }
+        .chart-title.cartcd4pct::before { background: #3498DB; }
+        .chart-title.cartcd8pct::before { background: #F39C12; }
+        .chart-title.cartnum::before { background: #E74C3C; }
+        .chart-title.cartcd4num::before { background: #3498DB; }
+        .chart-title.cartcd8num::before { background: #F39C12; }
+
+        .chart-wrapper { position: relative; height: 200px; }
+
+        .legend-info {
+            display: flex;
+            gap: 12px;
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid var(--border);
+            flex-wrap: wrap;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 10px;
+            color: var(--text-muted);
+        }
+
+        .legend-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+
+        .legend-dot.low { background: #FFF3E0; border: 1px solid #E65100; }
+        .legend-dot.normal { background: #E8F5E9; border: 1px solid #2E7D32; }
+        .legend-dot.high { background: #FFEBEE; border: 1px solid #C62828; }
+
+        footer { text-align: center; padding: 16px; color: var(--text-muted); font-size: 12px; }
+
+        /* Cart表格固定列 */
+        .table-fixed {
+            overflow-x: auto;
+            position: relative;
+        }
+
+        .table-fixed table {
+            min-width: 800px;
+        }
+
+        .table-fixed th:first-child,
+        .table-fixed td:first-child {
+            position: sticky;
+            left: 0;
+            background: #F8F9FB;
+            z-index: 2;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+        }
+
+        /* 报告解析样式 */
+        .analysis-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 12px;
+            padding: 16px;
+            color: white;
+            margin-bottom: 12px;
+        }
+
+        .analysis-card > div {
+            display: flex;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .analysis-card > div:last-child {
+            border-bottom: none;
+        }
+
+        .analysis-status .status-icon,
+        .analysis-trend .trend-icon,
+        .analysis-nature .nature-icon {
+            font-size: 18px;
+            margin-right: 10px;
+        }
+
+        .analysis-status .status-label,
+        .analysis-trend .trend-label,
+        .analysis-nature .nature-label {
+            font-size: 12px;
+            opacity: 0.8;
+            min-width: 70px;
+        }
+
+        .analysis-status .status-value {
+            font-weight: bold;
+            color: #FFD700;
+        }
+
+        .analysis-summary {
+            background: rgba(255,255,255,0.15);
+            border-radius: 8px;
+            padding: 12px;
+            margin-top: 12px;
+            font-size: 13px;
+        }
+
+        .evidence-card {
+            background: var(--card-bg);
+            border-radius: 10px;
+            padding: 16px;
+            margin-bottom: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            border-left: 4px solid #667eea;
+        }
+
+        .evidence-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--primary);
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+        }
+
+        .evidence-data {
+            background: #f8f9fb;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 12px;
+        }
+
+        .data-row {
+            display: flex;
+            flex-direction: column;
+            padding: 6px 0;
+        }
+
+        .data-label {
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        .data-value {
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .data-trend {
+            font-size: 11px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            margin-left: 8px;
+        }
+
+        .data-trend.down {
+            background: #E8F5E9;
+            color: #2E7D32;
+        }
+
+        .evidence-detail {
+            font-size: 12px;
+            color: var(--text);
+        }
+
+        .evidence-detail p {
+            margin: 6px 0;
+        }
+
+        .evidence-conclusion {
+            background: #E3F2FD;
+            border-radius: 8px;
+            padding: 12px;
+            font-size: 13px;
+        }
+
+        .evidence-conclusion.highlight {
+            background: linear-gradient(135deg, #E8F5E9 0%, #C8E6C9 100%);
+        }
+
+        .mdt-result {
+            background: var(--card-bg);
+            border-radius: 10px;
+            padding: 16px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+
+        .mdt-item {
+            display: flex;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .mdt-item:last-child {
+            border-bottom: none;
+        }
+
+        .mdt-label {
+            font-size: 12px;
+            color: var(--text-muted);
+            min-width: 80px;
+        }
+
+        .mdt-value {
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .mdt-value.pr {
+            color: #667eea;
+        }
+
+        .prediction-cards {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+        }
+
+        .prediction-card {
+            background: var(--card-bg);
+            border-radius: 10px;
+            padding: 14px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            text-align: center;
+        }
+
+        .prediction-card.best {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .prediction-card.warning {
+            background: #FFF3E0;
+        }
+
+        .pred-header {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 8px;
+        }
+
+        .pred-icon {
+            font-size: 16px;
+            margin-right: 6px;
+        }
+
+        .pred-title {
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .pred-prob {
+            font-size: 22px;
+            font-weight: bold;
+            margin: 8px 0;
+        }
+
+        .prediction-card.best .pred-prob {
+            color: #FFD700;
+        }
+
+        .pred-evidence {
+            font-size: 10px;
+            text-align: left;
+        }
+
+        .pred-evidence ul {
+            margin: 4px 0;
+            padding-left: 16px;
+        }
+
+        .next-steps h3 {
+            font-size: 14px;
+            margin-bottom: 12px;
+            color: var(--primary);
+        }
+
+        .signal-items,
+        .strategy-items {
+            background: var(--card-bg);
+            border-radius: 10px;
+            padding: 14px;
+            margin-bottom: 16px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+
+        .signal-item,
+        .strategy-item {
+            display: flex;
+            align-items: flex-start;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--border);
+            font-size: 12px;
+        }
+
+        .signal-item:last-child,
+        .strategy-item:last-child {
+            border-bottom: none;
+        }
+
+        .signal-icon,
+        .strategy-icon {
+            font-size: 14px;
+            margin-right: 10px;
+            margin-top: 2px;
+        }
+
+        .signal-item.good { color: #2E7D32; }
+        .signal-item.medium { color: #ED7D31; }
+        .signal-item.bad { color: #C62828; }
+
+        .strategy-item.highlight {
+            background: #FFF8E1;
+            margin: 0 -14px;
+            padding: 12px 14px;
+            border-bottom: none;
+            border-radius: 0 0 10px 10px;
+        }
+
+        .strategy-reason {
+            display: block;
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 4px;
+            margin-left: 24px;
+        }
+
+        .final-summary {
+            background: linear-gradient(135deg, #E8F5E9 0%, #C8E6C9 100%);
+            border-radius: 10px;
+            padding: 16px;
+        }
+
+        .final-summary > p {
+            margin-bottom: 12px;
+            font-size: 13px;
+        }
+
+        .final-conclusion {
+            background: white;
+            border-radius: 8px;
+            padding: 14px;
+            font-size: 13px;
+        }
+
+        .final-conclusion p:last-child {
+            margin-top: 8px;
+            font-weight: 500;
+            color: var(--primary);
+        }
+
+        .analysis-footer {
+            background: #f8f9fb;
+            border-radius: 8px;
+            padding: 12px 16px;
+            margin-top: 16px;
+            font-size: 12px;
+            color: var(--text-muted);
+            border-top: 1px solid var(--border);
+        }
+
+        .analysis-footer p {
+            margin: 4px 0;
+        }
+
+        /* 平板适配 */
+        @media (max-width: 900px) {
+            .charts-grid { grid-template-columns: 1fr; }
+            .summary-cards { grid-template-columns: repeat(3, 1fr); }
+        }
+
+        /* 手机适配 */
+        @media (max-width: 600px) {
+            .header { padding: 15px 10px; }
+            .header h1 { font-size: 18px; }
+            .header p { font-size: 11px; }
+
+            .tab { padding: 12px 6px; font-size: 12px; }
+
+            .container { padding: 15px 10px; }
+
+            .summary-cards {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 8px;
+            }
+
+            .card { padding: 12px 6px; }
+            .card-title { font-size: 9px; }
+            .card-value { font-size: 16px; }
+
+            .section { padding: 14px; margin-bottom: 12px; }
+            .section-title { font-size: 14px; }
+
+            th, td { padding: 8px 4px; font-size: 10px; }
+            th .sub { display: none; }
+
+            .charts-grid { grid-template-columns: 1fr; gap: 12px; }
+            .chart-wrapper { height: 180px; }
+            .chart-container {
+                padding: 12px;
+                overflow: hidden;
+                box-sizing: border-box;
+            }
+            .wide-chart { grid-column: auto; }
+
+            .chart-title {
+                font-size: 11px;
+                text-align: center;
+                padding-left: 0;
+                white-space: normal;
+                overflow: visible;
+                text-overflow: unset;
+                justify-content: center;
+            }
+
+            .legend-info { gap: 8px; flex-wrap: wrap; justify-content: center; }
+            .legend-item { font-size: 9px; }
+
+            /* 手机上固定列 */
+            .table-fixed th:first-child,
+            .table-fixed td:first-child {
+                position: sticky;
+                left: 0;
+                min-width: 80px;
+            }
+        }
+
+        /* 超小屏幕 */
+        @media (max-width: 380px) {
+            .summary-cards { grid-template-columns: repeat(2, 1fr); }
+            .card-value { font-size: 14px; }
+            .chart-wrapper { height: 150px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>血液检测报告汇总</h1>
+        <p>血常规、LDH及Cart细胞检测数据可视化</p>
+    </div>
+
+    <div class="tabs">
+        <button class="tab active" data-tab="blood">血常规报告</button>
+        <button class="tab" data-tab="ldh">LDH数据</button>
+        <button class="tab" data-tab="cart">Cart细胞</button>
+        <button class="tab" data-tab="analysis">报告解析</button>
+    </div>
+
+    <div class="container">
+        <!-- ==================== 血常规报告 ==================== -->
+        <div id="blood" class="tab-content active">
+            <div class="summary-cards">
+                <div class="card">
+                    <div class="card-date" id="wbc-date">最新：-</div>
+                    <div class="card-title">白细胞(WBC)</div>
+                    <div class="card-value" id="wbc-latest">-</div>
+                    <span class="card-indicator normal" id="wbc-status">-</span>
+                </div>
+                <div class="card">
+                    <div class="card-date" id="ne-date">最新：-</div>
+                    <div class="card-title">中性粒细胞(NE#)</div>
+                    <div class="card-value" id="ne-latest">-</div>
+                    <span class="card-indicator normal" id="ne-status">-</span>
+                </div>
+                <div class="card">
+                    <div class="card-date" id="ly-date">最新：-</div>
+                    <div class="card-title">淋巴细胞(LY#)</div>
+                    <div class="card-value" id="ly-latest">-</div>
+                    <span class="card-indicator normal" id="ly-status">-</span>
+                </div>
+                <div class="card">
+                    <div class="card-date" id="plt-date">最新：-</div>
+                    <div class="card-title">血小板(PLT)</div>
+                    <div class="card-value" id="plt-latest">-</div>
+                    <span class="card-indicator normal" id="plt-status">-</span>
+                </div>
+                <div class="card">
+                    <div class="card-date" id="hgb-date">最新：-</div>
+                    <div class="card-title">血红蛋白(HGB)</div>
+                    <div class="card-value" id="hgb-latest">-</div>
+                    <span class="card-indicator normal" id="hgb-status">-</span>
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-header">
+                    <h2 class="section-title">数据明细</h2>
+                </div>
+                <div style="overflow-x:auto;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>日期</th>
+                                <th>WBC<br><span class="sub" style="font-weight:400;font-size:9px">3.5-9.5</span></th>
+                                <th>NE#<br><span class="sub" style="font-weight:400;font-size:9px">1.8-6.3</span></th>
+                                <th>LY#<br><span class="sub" style="font-weight:400;font-size:9px">1.1-3.2</span></th>
+                                <th>PLT<br><span class="sub" style="font-weight:400;font-size:9px">125-350</span></th>
+                                <th>HGB<br><span class="sub" style="font-weight:400;font-size:9px">115-150</span></th>
+                            </tr>
+                        </thead>
+                        <tbody id="bloodTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-header">
+                    <h2 class="section-title">趋势分析</h2>
+                </div>
+                <div class="charts-grid">
+                    <div class="chart-container">
+                        <div class="chart-title wbc">白细胞(WBC)</div>
+                        <div class="chart-wrapper"><canvas id="wbcChart"></canvas></div>
+                        <div class="legend-info">
+                            <div class="legend-item"><span class="legend-dot low"></span>&lt;3.5</div>
+                            <div class="legend-item"><span class="legend-dot normal"></span>正常</div>
+                            <div class="legend-item"><span class="legend-dot high"></span>&gt;9.5</div>
+                        </div>
+                    </div>
+                    <div class="chart-container">
+                        <div class="chart-title ne">中性粒细胞(NE#)</div>
+                        <div class="chart-wrapper"><canvas id="neChart"></canvas></div>
+                        <div class="legend-info">
+                            <div class="legend-item"><span class="legend-dot low"></span>&lt;1.8</div>
+                            <div class="legend-item"><span class="legend-dot normal"></span>正常</div>
+                            <div class="legend-item"><span class="legend-dot high"></span>&gt;6.3</div>
+                        </div>
+                    </div>
+                    <div class="chart-container">
+                        <div class="chart-title ly">淋巴细胞(LY#)</div>
+                        <div class="chart-wrapper"><canvas id="lyChart"></canvas></div>
+                        <div class="legend-info">
+                            <div class="legend-item"><span class="legend-dot low"></span>&lt;1.1</div>
+                            <div class="legend-item"><span class="legend-dot normal"></span>正常</div>
+                            <div class="legend-item"><span class="legend-dot high"></span>&gt;3.2</div>
+                        </div>
+                    </div>
+                    <div class="chart-container">
+                        <div class="chart-title plt">血小板(PLT)</div>
+                        <div class="chart-wrapper"><canvas id="pltChart"></canvas></div>
+                        <div class="legend-info">
+                            <div class="legend-item"><span class="legend-dot low"></span>&lt;125</div>
+                            <div class="legend-item"><span class="legend-dot normal"></span>正常</div>
+                            <div class="legend-item"><span class="legend-dot high"></span>&gt;350</div>
+                        </div>
+                    </div>
+                    <div class="chart-container wide-chart">
+                        <div class="chart-title hgb">血红蛋白(HGB)</div>
+                        <div class="chart-wrapper"><canvas id="hgbChart"></canvas></div>
+                        <div class="legend-info">
+                            <div class="legend-item"><span class="legend-dot low"></span>&lt;115</div>
+                            <div class="legend-item"><span class="legend-dot normal"></span>正常</div>
+                            <div class="legend-item"><span class="legend-dot high"></span>&gt;150</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== LDH数据 ==================== -->
+        <div id="ldh" class="tab-content">
+            <div class="summary-cards">
+                <div class="card">
+                    <div class="card-date" id="ldh-date">最新：-</div>
+                    <div class="card-title">LDH值</div>
+                    <div class="card-value" id="ldh-latest">-</div>
+                    <span class="card-indicator" id="ldh-status">-</span>
+                </div>
+                <div class="card">
+                    <div class="card-date" id="ldh-first-date">首次：-</div>
+                    <div class="card-title">首次检测值</div>
+                    <div class="card-value" id="ldh-first">-</div>
+                    <span class="card-indicator">首次</span>
+                </div>
+                <div class="card">
+                    <div class="card-date">变化</div>
+                    <div class="card-title">变化幅度</div>
+                    <div class="card-value" id="ldh-change">-</div>
+                    <span class="card-indicator normal" id="ldh-change-arrow">-</span>
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-header">
+                    <h2 class="section-title">LDH检测数据</h2>
+                </div>
+                <div style="overflow-x:auto;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>日期</th>
+                                <th>LDH (U/L)<br><span class="sub" style="font-weight:400;font-size:9px">参考值: 120-250</span></th>
+                            </tr>
+                        </thead>
+                        <tbody id="ldhTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-header">
+                    <h2 class="section-title">LDH趋势图</h2>
+                </div>
+                <div class="charts-grid">
+                    <div class="chart-container wide-chart">
+                        <div class="chart-title ldh">乳酸脱氢酶(LDH)</div>
+                        <div class="chart-wrapper"><canvas id="ldhChart"></canvas></div>
+                        <div class="legend-info">
+                            <div class="legend-item"><span class="legend-dot low"></span>&lt;120</div>
+                            <div class="legend-item"><span class="legend-dot normal"></span>正常</div>
+                            <div class="legend-item"><span class="legend-dot high"></span>&gt;250</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== Cart细胞 ==================== -->
+        <div id="cart" class="tab-content">
+            <div class="section">
+                <div class="section-header">
+                    <h2 class="section-title">Cart细胞检测数据</h2>
+                </div>
+                <div class="table-fixed">
+                    <table id="cartTable">
+                        <thead></thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-header">
+                    <h2 class="section-title">T细胞亚群百分比</h2>
+                </div>
+                <div class="charts-grid">
+                    <div class="chart-container">
+                        <div class="chart-title tpct">总T细胞(T%)</div>
+                        <div class="chart-wrapper"><canvas id="cartTPctChart"></canvas></div>
+                    </div>
+                    <div class="chart-container">
+                        <div class="chart-title cd4pct">辅助T细胞(CD4+%)</div>
+                        <div class="chart-wrapper"><canvas id="cartCD4PctChart"></canvas></div>
+                    </div>
+                    <div class="chart-container">
+                        <div class="chart-title cd8pct">杀伤T细胞(CD8+%)</div>
+                        <div class="chart-wrapper"><canvas id="cartCD8PctChart"></canvas></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-header">
+                    <h2 class="section-title">T细胞绝对计数</h2>
+                </div>
+                <div class="charts-grid">
+                    <div class="chart-container">
+                        <div class="chart-title tnum">总T细胞(T#)</div>
+                        <div class="chart-wrapper"><canvas id="cartTNumChart"></canvas></div>
+                    </div>
+                    <div class="chart-container">
+                        <div class="chart-title cd4num">辅助T细胞(CD4+#)</div>
+                        <div class="chart-wrapper"><canvas id="cartCD4NumChart"></canvas></div>
+                    </div>
+                    <div class="chart-container">
+                        <div class="chart-title cd8num">杀伤T细胞(CD8+#)</div>
+                        <div class="chart-wrapper"><canvas id="cartCD8NumChart"></canvas></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-header">
+                    <h2 class="section-title">CarT-T细胞百分比</h2>
+                </div>
+                <div class="charts-grid">
+                    <div class="chart-container">
+                        <div class="chart-title cartpct">CarT-T(CD3+CarT%)</div>
+                        <div class="chart-wrapper"><canvas id="cartCarTPctChart"></canvas></div>
+                    </div>
+                    <div class="chart-container">
+                        <div class="chart-title cartcd4pct">CD4+Car-T</div>
+                        <div class="chart-wrapper"><canvas id="cartCD4CarTPctChart"></canvas></div>
+                    </div>
+                    <div class="chart-container">
+                        <div class="chart-title cartcd8pct">CD8+Car-T</div>
+                        <div class="chart-wrapper"><canvas id="cartCD8CarTPctChart"></canvas></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-header">
+                    <h2 class="section-title">CarT-T细胞绝对计数</h2>
+                </div>
+                <div class="charts-grid">
+                    <div class="chart-container">
+                        <div class="chart-title cartnum">CarT-T#</div>
+                        <div class="chart-wrapper"><canvas id="cartCarTNumChart"></canvas></div>
+                    </div>
+                    <div class="chart-container">
+                        <div class="chart-title cartcd4num">CD4+Car-T#</div>
+                        <div class="chart-wrapper"><canvas id="cartCD4CarTNumChart"></canvas></div>
+                    </div>
+                    <div class="chart-container">
+                        <div class="chart-title cartcd8num">CD8+Car-T#</div>
+                        <div class="chart-wrapper"><canvas id="cartCD8CarTNumChart"></canvas></div>
+                    </div>
+                </div>
+            </div>
+
+            <footer>
+                <p>Cart-T细胞治疗监测数据</p>
+            </footer>
+        </div>
+
+        <!-- ==================== 报告解析 ==================== -->
+        <div id="analysis" class="tab-content">
+            <div class="section">
+                <div class="section-header">
+                    <h2 class="section-title">核心结论</h2>
+                </div>
+                <div class="analysis-card">
+                    <div class="analysis-status status-pr">
+                        <span class="status-icon">📊</span>
+                        <span class="status-label">当前状态</span>
+                        <span class="status-value">持续改善型部分缓解 (PR)</span>
+                    </div>
+                    <div class="analysis-trend">
+                        <span class="trend-icon">📈</span>
+                        <span class="trend-label">整体趋势</span>
+                        <span class="trend-value">明确向完全缓解 (CR) 发展</span>
+                    </div>
+                    <div class="analysis-nature">
+                        <span class="nature-icon">🧬</span>
+                        <span class="nature-label">疾病本质</span>
+                        <span class="nature-value">处于CAR-T主导的免疫控制状态，但仍有残留病灶</span>
+                    </div>
+                </div>
+                <div class="analysis-summary">
+                    <p>🎯 <strong>核心寄语：</strong>治疗有效，目前处于"清扫残局"的最后阶段。</p>
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-header">
+                    <h2 class="section-title">三大核心证据整合</h2>
+                </div>
+
+                <div class="evidence-card">
+                    <h3 class="evidence-title">① PET/CT (定级核心)</h3>
+                    <div class="evidence-data">
+                        <div class="data-row">
+                            <span class="data-label">肿瘤负荷（体积）</span>
+                            <span class="data-value">84mm → 82mm → <strong>73mm</strong> <span class="data-trend down">↓持续下降</span></span>
+                        </div>
+                        <div class="data-row">
+                            <span class="data-label">肿瘤活性 (SUVmax)</span>
+                            <span class="data-value">28.7 → 21.2 → <strong>14.8</strong> <span class="data-trend down">↓持续下降</span></span>
+                        </div>
+                    </div>
+                    <div class="evidence-detail">
+                        <p>🟢 <strong>远处病灶：</strong>右肾上腺和心包病灶已消失；左肾上腺病灶明显下降</p>
+                        <p>⚠️ <strong>关键问题：</strong>Deauville评分持续为5分；前纵隔仍有活跃灶</p>
+                    </div>
+                    <div class="evidence-conclusion">
+                        <p>📋 <strong>结论：</strong>全身性疾病已控制，局部残留活跃灶</p>
+                    </div>
+                </div>
+
+                <div class="evidence-card">
+                    <h3 class="evidence-title">② 血液指标 (CAR-T动态)</h3>
+                    <div class="evidence-data">
+                        <div class="data-row">
+                            <span class="data-label">CAR-T扩增特征</span>
+                            <span class="data-value">成功扩增，持续存在（非短期爆发型），无爆发峰（平稳型）</span>
+                        </div>
+                        <div class="data-row">
+                            <span class="data-label">本质判断</span>
+                            <span class="data-value">属于"持续压制型"，起效慢但更"稳"，利于长期控制</span>
+                        </div>
+                    </div>
+                    <div class="evidence-detail">
+                        <p>🩸 <strong>LDH (乳酸脱氢酶)：</strong>总体呈下降趋势，反映肿瘤负荷下降</p>
+                        <p>🩸 <strong>血象表现：</strong>血小板低、中性粒细胞低、轻度贫血</p>
+                        <p>📋 <strong>判断：</strong>典型的"CAR-T后骨髓抑制+免疫重建期"</p>
+                    </div>
+                </div>
+
+                <div class="evidence-card">
+                    <h3 class="evidence-title">③ 骨髓检查 (全身受控的关键)</h3>
+                    <div class="evidence-conclusion highlight">
+                        <p>✅ <strong>结论：</strong>未见淋巴瘤侵犯</p>
+                        <p>🎯 <strong>意义：</strong>将病情定性从"可能的全身失控"转变为"<strong>局部残留型疾病</strong>"</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-header">
+                    <h2 class="section-title">整合诊断 (MDT标准结论)</h2>
+                </div>
+                <div class="mdt-result">
+                    <div class="mdt-item">
+                        <span class="mdt-label">疗效分级</span>
+                        <span class="mdt-value pr">PR (持续改善型)</span>
+                    </div>
+                    <div class="mdt-item">
+                        <span class="mdt-label">生物学行为</span>
+                        <span class="mdt-value">无骨髓累及，无广泛进展。本质是"被压制但未清零"</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-header">
+                    <h2 class="section-title">未来走势预测</h2>
+                </div>
+                <div class="prediction-cards">
+                    <div class="prediction-card best">
+                        <div class="pred-header">
+                            <span class="pred-icon">🚀</span>
+                            <span class="pred-title">路径1：进入CR (最可能)</span>
+                        </div>
+                        <div class="pred-prob">65-75%</div>
+                        <div class="pred-evidence">
+                            <p>支持证据：</p>
+                            <ul>
+                                <li>PET指标持续下降</li>
+                                <li>CAR-T仍活跃</li>
+                                <li>骨髓阴性</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="prediction-card">
+                        <div class="pred-header">
+                            <span class="pred-icon">⏸️</span>
+                            <span class="pred-title">路径2：停在PR</span>
+                        </div>
+                        <div class="pred-prob">20-25%</div>
+                        <div class="pred-evidence">
+                            <p>表现：指标下降变慢</p>
+                        </div>
+                    </div>
+                    <div class="prediction-card warning">
+                        <div class="pred-header">
+                            <span class="pred-icon">⚠️</span>
+                            <span class="pred-title">路径3：进展</span>
+                        </div>
+                        <div class="pred-prob">&lt;15%</div>
+                        <div class="pred-evidence">
+                            <p>(已明显降低)</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-header">
+                    <h2 class="section-title">关键节点与下一步行动</h2>
+                </div>
+                <div class="next-steps">
+                    <h3>下次PET结果预测</h3>
+                    <div class="signal-items">
+                        <div class="signal-item good">
+                            <span class="signal-icon">✅</span>
+                            <span class="signal-text">好信号：SUV降至10以下或接近5 → 进入CR轨道</span>
+                        </div>
+                        <div class="signal-item medium">
+                            <span class="signal-icon">⚡</span>
+                            <span class="signal-text">中信号：下降变慢 → 停在PR</span>
+                        </div>
+                        <div class="signal-item bad">
+                            <span class="signal-icon">❌</span>
+                            <span class="signal-text">坏信号：SUV反弹 → 考虑进展</span>
+                        </div>
+                    </div>
+
+                    <h3>治疗策略 (分歧点决策)</h3>
+                    <div class="strategy-items">
+                        <div class="strategy-item">
+                            <span class="strategy-icon">📊</span>
+                            <span class="strategy-text">若继续下降：继续观察，不干预</span>
+                        </div>
+                        <div class="strategy-item highlight">
+                            <span class="strategy-icon">🎯</span>
+                            <span class="strategy-text"><strong>若停在PR (关键分支)：</strong>推荐<strong>局部放射治疗</strong></span>
+                            <span class="strategy-reason">理由：全身已控制，仅需放电清扫CAR-T没杀干净的最后残留</span>
+                        </div>
+                        <div class="strategy-item">
+                            <span class="strategy-icon">💊</span>
+                            <span class="strategy-text">若进展：考虑双特异性抗体或移植</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-header">
+                    <h2 class="section-title">最终总结</h2>
+                </div>
+                <div class="final-summary">
+                    <p>🔬 <strong>阶段转变：</strong>现在不是在担心CAR-T是否有效，而是在研究"<strong>能不能把PR推到CR</strong>"</p>
+                    <div class="final-conclusion">
+                        <p>🎯 <strong>最终一句话：</strong></p>
+                        <p>系统性疾病已被压制，整体向好，关键在于最后局部病灶是自然消退还是需要通过局部放疗"<strong>补最后的一刀</strong>"。</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="analysis-footer">
+                <p>📝 <strong>解析来源：</strong>ChatGPT</p>
+                <p>📅 <strong>解析日期：</strong>2026-04-10</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    (function() {
+        // ==================== 数据定义 ====================
+        var bloodData = [
+            { date: "2026-03-05", wbc: 4.81, ne: 1.09, ly: 3.26, plt: 6, hgb: 95 }, { date: "2026-03-06", wbc: 3.11, ne: 0.66, ly: 2.09, plt: 59, hgb: 92 }, { date: "2026-03-07", wbc: 3.11, ne: 0.42, ly: 2.3, plt: 45, hgb: 89 }, { date: "2026-03-08", wbc: 3.44, ne: 0.23, ly: 2.82, plt: 27, hgb: 83 }, { date: "2026-03-09", wbc: 3.14, ne: 0.26, ly: 2.44, plt: 46, hgb: 84 }, { date: "2026-03-11", wbc: 3.13, ne: 0.3, ly: 2.46, plt: 21, hgb: 81 }, { date: "2026-03-12", wbc: 2.09, ne: 0.33, ly: 1.5, plt: 43, hgb: 80 }, { date: "2026-03-14", wbc: 2.91, ne: 0.52, ly: 2.03, plt: 22, hgb: 77 }, { date: "2026-03-15", wbc: 2.92, ne: 0.82, ly: 1.74, plt: 51, hgb: 77 }, { date: "2026-03-17", wbc: 3.43, ne: 0.75, ly: 2.38, plt: 23, hgb: 70 }, { date: "2026-03-18", wbc: 3.66, ne: 0.7, ly: 2.57, plt: 56, hgb: 69 }, { date: "2026-03-20", wbc: 3.92, ne: 1.08, ly: 2.37, plt: 28, hgb: 65 }, { date: "2026-03-21", wbc: 4.42, ne: 1.2, ly: 2.76, plt: 18, hgb: 65 }, { date: "2026-03-22", wbc: 4.72, ne: 1.58, ly: 2.51, plt: 53, hgb: 64 }, { date: "2026-03-24", wbc: 6.59, ne: 2.62, ly: 3.09, plt: 33, hgb: 62 }, { date: "2026-03-25", wbc: 8.53, ne: 5.04, ly: 2.71, plt: 27, hgb: 74 }, { date: "2026-03-26", wbc: 6.22, ne: 3.02, ly: 2.76, plt: 27, hgb: 67 }, { date: "2026-03-27", wbc: 4.16, ne: 1.18, ly: 2.41, plt: 49, hgb: 62 }, { date: "2026-03-29", wbc: 11.79, ne: 7.41, ly: 2.99, plt: 36, hgb: 62 }, { date: "2026-03-30", wbc: 7.99, ne: 4.16, ly: 2.75, plt: 80, hgb: 61 }, { date: "2026-03-31", wbc: 4.62, ne: 1.72, ly: 2.21, plt: 72, hgb: 60 }, { date: "2026-04-03", wbc: 6.33, ne: 3.22, ly: 2.21, plt: 48, hgb: 70 }, { date: "2026-04-07", wbc: 4.84, ne: 1.42, ly: 2.53, plt: 43, hgb: 75 }, { date: "2026-04-10", wbc: 9.59, ne: 6.22, ly: 2.51, plt: 58, hgb: 83 }, { date: "2026-04-17", wbc: 4.92, ne: 2.35, ly: 1.71, plt: 92, hgb: 88 }, { date: "2026-04-27", wbc: 4.76, ne: 2.89, ly: 1.29, plt: 139, hgb: 110 }, { date: "2026-05-06", wbc: 5.41, ne: 3.27, ly: 1.51, plt: 140, hgb: 110 }, { date: "2026-05-13", wbc: 4.52, ne: 2.24, ly: 1.56, plt: 121, hgb: 107 }, { date: "2026-06-10", wbc: 3.45, ne: 1.38, ly: 1.41, plt: 60, hgb: 130 }, { date: "2026-06-14", wbc: 5.58, ne: 2.92, ly: 1.84, plt: 49, hgb: 133 }, { date: "2026-06-19", wbc: 4.17, ne: 2.15, ly: 1.42, plt: 48, hgb: 128 }, { date: "2026-06-27", wbc: 2.83, ne: 1.36, ly: 0.81, plt: 49, hgb: 128 }
+        ];
+
+        var ldhData = [
+            { date: "2026.01.19", value: 1482.0 }, { date: "2026.01.22", value: 1381.0 }, { date: "2026.01.28", value: 1355.0 }, { date: "2026.01.31", value: 1459.0 }, { date: "2026.02.03", value: 1481.0 }, { date: "2026.02.06", value: 1394.0 }, { date: "2026.02.10", value: 1534.0 }, { date: "2026.02.13", value: 1512.0 }, { date: "2026.02.18", value: 988.0 }, { date: "2026.02.20", value: 792.0 }, { date: "2026.02.25", value: 634.0 }, { date: "2026.03.05", value: 362.0 }, { date: "2026.03.17", value: 245.0 }, { date: "2026.03.27", value: 269.0 }, { date: "2026.04.03", value: 364.0 }, { date: "2026.04.10", value: 362.0 }, { date: "2026.04.17", value: 341.0 }, { date: "2026.04.27", value: 427.0 }, { date: "2026.05.06", value: 434.0 }, { date: "2026.05.13", value: 416.0 }, { date: "2026.06.11", value: 409.0 }
+        ];
+
+        var cartDates = ["2026-02-04", "2026-02-06", "2026-02-09", "2026-02-13", "2026-02-25", "2025-03-05", "2025-03-17", "2025-03-27", "2025-04-10", "2025-04-17", "2025-04-27", "2025-05-06", "2025-05-13", "2025-06-10"];
+        var cartData = {tPct: [70.31, 77.02, 81.66, 96.98, 96.05, 96.44, 97.79, 98.6, 92.58, 94.22, 92.62, 95.63, 95.78, 91.07], cd4Pct: [34.27, 33.43, 17.29, 8.2, 5.04, 7.68, 9.53, 11.04, 14.86, 10.56, 11.41, 13.81, 14.74, 16.18], cd8Pct: [49.44, 49.21, 59.06, 74.64, 79.09, 76.05, 77.99, 79.36, 72.33, 76.99, 74.75, 76.94, 76.35, 71.07], tNum: [408.0, 324.0, 860.0, 2612.0, 3892.0, 2826.0, 3016.0, 2938.0, 1719.0, 1770.0, 1502.0, 1646.0, 1558.0, 623.0], cd4Num: [140.0, 108.0, 149.0, 214.0, 196.0, 222.0, 288.0, 324.0, 255.0, 187.0, 171.0, 227.0, 220.0, 101.0], cd8Num: [202.0, 159.0, 508.0, 1950.0, 3078.0, 2150.0, 2352.0, 2332.0, 1243.0, 1362.0, 1123.0, 1266.0, 1189.0, 443.0], carTPct: [0.24, 24.1, 31.35, 65.28, 76.58, 76.32, 71.27, 69.11, 52.5, 61.28, 60.55, 61.21, 60.86, 47.5], cd4CarTPct: [0.0, 9.32, 1.84, 0.49, 0.69, 0.64, 0.09, 0.26, 0.25, 0.3, 0.33, 0.71, 0.51, 0.17], cd8CarTPct: [84.62, 76.4, 76.44, 84.13, 85.23, 88.8, 90.05, 88.29, 93.46, 93.82, 87.84, 97.04, 93.81, 89.34], carTNum: [1.0, 78.0, 270.0, 1705.0, 2981.0, 2157.0, 2150.0, 2029.0, 902.0, 1084.0, 909.0, 1007.0, 948.0, 296.0], cd4CarTNum: [0.0, 7.0, 5.0, 8.0, 21.0, 14.0, 2.0, 5.0, 2.0, 3.0, 3.0, 7.0, 5.0, 1.0], cd8CarTNum: [1.0, 60.0, 206.0, 1435.0, 2540.0, 1915.0, 1960.0, 1792.0, 843.0, 1017.0, 797.0, 971.0, 899.0, 265.0]};
+
+        // ==================== 标签页切换 ====================
+        document.querySelectorAll('.tab').forEach(function(tab) {
+            tab.addEventListener('click', function() {
+                document.querySelectorAll('.tab').forEach(function(t) { t.classList.remove('active'); });
+                document.querySelectorAll('.tab-content').forEach(function(c) { c.classList.remove('active'); });
+                this.classList.add('active');
+                document.getElementById(this.dataset.tab).classList.add('active');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            });
+        });
+
+        // ==================== 工具函数 ====================
+        var bloodRanges = {
+            wbc: { min: 3.5, max: 9.5 },
+            ne: { min: 1.8, max: 6.3 },
+            ly: { min: 1.1, max: 3.2 },
+            plt: { min: 125, max: 350 },
+            hgb: { min: 115, max: 150 }
+        };
+
+        function getBloodStatus(value, key) {
+            if (value < bloodRanges[key].min) return 'low';
+            if (value > bloodRanges[key].max) return 'high';
+            return 'normal';
+        }
+
+        function getBadgeClass(status) {
+            return status === 'low' ? 'badge-low' : status === 'high' ? 'badge-high' : 'badge-normal';
+        }
+
+        function getCardIndicatorClass(status) {
+            return status === 'low' ? 'card-indicator low' : status === 'high' ? 'card-indicator high' : 'card-indicator normal';
+        }
+
+        function formatDate(dateStr) {
+            return dateStr.substring(5);
+        }
+
+        function createLineChart(canvasId, label, labels, data, color) {
+            var ctx = document.getElementById(canvasId).getContext('2d');
+            var isMobile = window.innerWidth <= 600;
+            return new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: label,
+                        data: data,
+                        borderColor: color,
+                        backgroundColor: color + '20',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.3,
+                        pointRadius: 3,
+                        pointHoverRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: {
+                            grid: { display: false },
+                            ticks: {
+                                maxRotation: isMobile ? 0 : 45,
+                                minRotation: isMobile ? 0 : 45,
+                                font: { size: isMobile ? 9 : 10 },
+                                callback: function(value, index) {
+                                    if (isMobile && labels.length > 6) {
+                                        return index % Math.ceil(labels.length / 6) === 0 ? labels[index] : '';
+                                    }
+                                    return labels[index];
+                                }
+                            }
+                        },
+                        y: { beginAtZero: false, grid: { color: '#F0F0F0' }, ticks: { font: { size: isMobile ? 9 : 10 } } }
+                    }
+                }
+            });
+        }
+
+        // ==================== 血常规渲染 ====================
+        var latest = bloodData[bloodData.length - 1];
+
+        document.getElementById('wbc-date').textContent = '最新：' + latest.date;
+        document.getElementById('ne-date').textContent = '最新：' + latest.date;
+        document.getElementById('ly-date').textContent = '最新：' + latest.date;
+        document.getElementById('plt-date').textContent = '最新：' + latest.date;
+        document.getElementById('hgb-date').textContent = '最新：' + latest.date;
+
+        document.getElementById('wbc-latest').textContent = latest.wbc;
+        document.getElementById('ne-latest').textContent = latest.ne;
+        document.getElementById('ly-latest').textContent = latest.ly;
+        document.getElementById('plt-latest').textContent = latest.plt;
+        document.getElementById('hgb-latest').textContent = latest.hgb;
+
+        var wbcStatus = getBloodStatus(latest.wbc, 'wbc');
+        var neStatus = getBloodStatus(latest.ne, 'ne');
+        var lyStatus = getBloodStatus(latest.ly, 'ly');
+        var pltStatus = getBloodStatus(latest.plt, 'plt');
+        var hgbStatus = getBloodStatus(latest.hgb, 'hgb');
+
+        var statusText = { low: '偏低', normal: '正常', high: '偏高' };
+        document.getElementById('wbc-status').className = getCardIndicatorClass(wbcStatus);
+        document.getElementById('wbc-status').textContent = statusText[wbcStatus];
+        document.getElementById('ne-status').className = getCardIndicatorClass(neStatus);
+        document.getElementById('ne-status').textContent = statusText[neStatus];
+        document.getElementById('ly-status').className = getCardIndicatorClass(lyStatus);
+        document.getElementById('ly-status').textContent = statusText[lyStatus];
+        document.getElementById('plt-status').className = getCardIndicatorClass(pltStatus);
+        document.getElementById('plt-status').textContent = statusText[pltStatus];
+        document.getElementById('hgb-status').className = getCardIndicatorClass(hgbStatus);
+        document.getElementById('hgb-status').textContent = statusText[hgbStatus];
+
+        var bloodTbody = document.getElementById('bloodTableBody');
+        bloodData.forEach(function(row) {
+            var tr = document.createElement('tr');
+            tr.innerHTML = '<td class="date-cell">' + row.date + '</td>' +
+                '<td class="value-cell"><span class="badge ' + getBadgeClass(getBloodStatus(row.wbc, 'wbc')) + '">' + row.wbc + '</span></td>' +
+                '<td class="value-cell"><span class="badge ' + getBadgeClass(getBloodStatus(row.ne, 'ne')) + '">' + row.ne + '</span></td>' +
+                '<td class="value-cell"><span class="badge ' + getBadgeClass(getBloodStatus(row.ly, 'ly')) + '">' + row.ly + '</span></td>' +
+                '<td class="value-cell"><span class="badge ' + getBadgeClass(getBloodStatus(row.plt, 'plt')) + '">' + row.plt + '</span></td>' +
+                '<td class="value-cell"><span class="badge ' + getBadgeClass(getBloodStatus(row.hgb, 'hgb')) + '">' + row.hgb + '</span></td>';
+            bloodTbody.appendChild(tr);
+        });
+
+        var bloodLabels = bloodData.map(function(d) { return formatDate(d.date); });
+        createLineChart('wbcChart', '白细胞(WBC)', bloodLabels, bloodData.map(function(d) { return d.wbc; }), '#4472C4');
+        createLineChart('neChart', '中性粒细胞(NE#)', bloodLabels, bloodData.map(function(d) { return d.ne; }), '#ED7D31');
+        createLineChart('lyChart', '淋巴细胞(LY#)', bloodLabels, bloodData.map(function(d) { return d.ly; }), '#9B59B6');
+        createLineChart('pltChart', '血小板(PLT)', bloodLabels, bloodData.map(function(d) { return d.plt; }), '#70AD47');
+        createLineChart('hgbChart', '血红蛋白(HGB)', bloodLabels, bloodData.map(function(d) { return d.hgb; }), '#FF4444');
+
+        // ==================== LDH渲染 ====================
+        if (ldhData.length > 0) {
+            var ldhLatest = ldhData[ldhData.length - 1];
+            var ldhFirst = ldhData[0];
+
+            document.getElementById('ldh-date').textContent = '最新：' + ldhLatest.date;
+            document.getElementById('ldh-latest').textContent = ldhLatest.value;
+            document.getElementById('ldh-first-date').textContent = '首次：' + ldhFirst.date;
+            document.getElementById('ldh-first').textContent = ldhFirst.value;
+            var change = ((ldhLatest.value - ldhFirst.value) / ldhFirst.value * 100).toFixed(1);
+            document.getElementById('ldh-change').textContent = change + '%';
+            document.getElementById('ldh-change-arrow').textContent = change < 0 ? '↓' : '↑';
+
+            var ldhStatusClass = getCardIndicatorClass(ldhLatest.value > 250 ? 'high' : ldhLatest.value < 120 ? 'low' : 'normal');
+            document.getElementById('ldh-status').className = ldhStatusClass;
+            document.getElementById('ldh-status').textContent = ldhLatest.value > 250 ? '偏高' : ldhLatest.value < 120 ? '偏低' : '正常';
+
+            var ldhTbody = document.getElementById('ldhTableBody');
+            ldhData.forEach(function(row) {
+                var tr = document.createElement('tr');
+                var status = row.value > 250 ? 'badge-high' : row.value < 120 ? 'badge-low' : 'badge-normal';
+                tr.innerHTML = '<td class="date-cell">' + row.date + '</td><td class="value-cell"><span class="badge ' + status + '">' + row.value + '</span></td>';
+                ldhTbody.appendChild(tr);
+            });
+
+            createLineChart('ldhChart', 'LDH (U/L)', ldhData.map(function(d) { return d.date; }), ldhData.map(function(d) { return d.value; }), '#667eea');
+        }
+
+        // ==================== Cart细胞渲染 ====================
+        if (cartDates.length > 0) {
+            var cartHeaders = ['检测项目', '单位', '参考值'].concat(cartDates);
+            var cartRows = [
+                ['总T细胞(T%)', '%', '51~85'].concat(cartData.tPct || []),
+                ['辅助T细胞(CD4+%)', '%', '33~58'].concat(cartData.cd4Pct || []),
+                ['杀伤T细胞(CD8+%)', '%', '9~39'].concat(cartData.cd8Pct || []),
+                ['总T细胞(T#)', '个/μL', '723~2737'].concat(cartData.tNum || []),
+                ['辅助T细胞(CD4+##)', '个/μL', '404~1612'].concat(cartData.cd4Num || []),
+                ['杀伤T细胞(CD8+##)', '个/μL', '220~1129'].concat(cartData.cd8Num || []),
+                ['CarT-T(CD3+CarT%)', '%', '0~0'].concat(cartData.carTPct || []),
+                ['CD4+Car-T(%)', '%', '0~0'].concat(cartData.cd4CarTPct || []),
+                ['CD8+Car-T(%)', '%', '0~0'].concat(cartData.cd8CarTPct || []),
+                ['CarT-T#', '个/μL', '0~0'].concat(cartData.carTNum || []),
+                ['CD4+Car-T#', '个/μL', '0~0'].concat(cartData.cd4CarTNum || []),
+                ['CD8+Car-T#', '个/μL', '0~0'].concat(cartData.cd8CarTNum || [])
+            ];
+
+            var cartThead = document.querySelector('#cartTable thead');
+            var cartTbody = document.querySelector('#cartTable tbody');
+            var headerTr = document.createElement('tr');
+            cartHeaders.forEach(function(h) {
+                var th = document.createElement('th');
+                th.textContent = h;
+                headerTr.appendChild(th);
+            });
+            cartThead.appendChild(headerTr);
+
+            cartRows.forEach(function(row) {
+                var tr = document.createElement('tr');
+                row.forEach(function(cell, idx) {
+                    var td = document.createElement('td');
+                    td.textContent = cell;
+                    if (idx >= 3) td.className = 'value-cell';
+                    tr.appendChild(td);
+                });
+                cartTbody.appendChild(tr);
+            });
+
+            var cartShortDates = cartDates.map(function(d) { return d.substring(5); });
+
+            createLineChart('cartTPctChart', '总T细胞(T%)', cartShortDates, cartData.tPct || [], '#4472C4');
+            createLineChart('cartCD4PctChart', '辅助T细胞(CD4+%)', cartShortDates, cartData.cd4Pct || [], '#70AD47');
+            createLineChart('cartCD8PctChart', '杀伤T细胞(CD8+%)', cartShortDates, cartData.cd8Pct || [], '#ED7D31');
+            createLineChart('cartTNumChart', '总T细胞(T#)', cartShortDates, cartData.tNum || [], '#9B59B6');
+            createLineChart('cartCD4NumChart', '辅助T细胞(CD4+#)', cartShortDates, cartData.cd4Num || [], '#70AD47');
+            createLineChart('cartCD8NumChart', '杀伤T细胞(CD8+#)', cartShortDates, cartData.cd8Num || [], '#ED7D31');
+            createLineChart('cartCarTPctChart', 'CarT-T(CD3+CarT%)', cartShortDates, cartData.carTPct || [], '#E74C3C');
+            createLineChart('cartCD4CarTPctChart', 'CD4+Car-T(%)', cartShortDates, cartData.cd4CarTPct || [], '#3498DB');
+            createLineChart('cartCD8CarTPctChart', 'CD8+Car-T(%)', cartShortDates, cartData.cd8CarTPct || [], '#F39C12');
+            createLineChart('cartCarTNumChart', 'CarT-T#', cartShortDates, cartData.carTNum || [], '#E74C3C');
+            createLineChart('cartCD4CarTNumChart', 'CD4+Car-T#', cartShortDates, cartData.cd4CarTNum || [], '#3498DB');
+            createLineChart('cartCD8CarTNumChart', 'CD8+Car-T#', cartShortDates, cartData.cd8CarTNum || [], '#F39C12');
+        }
+    })();
+    </script>
+</body>
+</html>
