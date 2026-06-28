@@ -4,8 +4,9 @@ export function createLineChart(canvas, { label, labels, data, color }) {
   const isMobile = window.innerWidth <= 600
   const totalLabels = labels.length
 
-  // 根据数据量动态计算X轴标签间隔，目标显示约20个标签（移动端约12个）
-  const targetCount = isMobile ? 12 : 20
+  // 根据数据量动态计算X轴标签间隔
+  // 台式机显示全部标签，移动端约10个（避免密集）
+  const targetCount = isMobile ? 10 : totalLabels
   const step = Math.max(1, Math.ceil(totalLabels / targetCount))
 
   // Y轴动态计算合适的最小/最大值和步长
@@ -52,14 +53,30 @@ export function createLineChart(canvas, { label, labels, data, color }) {
         x: {
           grid: { display: false },
           ticks: {
+            // 台式机关闭自动跳过以显示全部标签；移动端开启避免密集
+            autoSkip: isMobile,
+            maxTicksLimit: isMobile ? targetCount + 2 : undefined,
             maxRotation: isMobile ? 0 : 45,
             minRotation: isMobile ? 0 : 45,
-            font: { size: isMobile ? 9 : 10 },
+            font: { size: isMobile ? 9 : (totalLabels > 20 ? 9 : 10) },
             callback: function(value, index) {
-              // 按步长显示标签，确保首尾显示
               if (index === 0 || index === totalLabels - 1) return labels[index]
-              if (index % step === 0) return labels[index]
-              return ''
+              if (isMobile) {
+                // 移动端由 autoSkip 控制，回调只确保首尾不丢
+                return labels[index]
+              }
+              // 台式机：全部显示
+              return labels[index]
+            }
+          },
+          afterBuildTicks: function(axis) {
+            // 移动端 autoSkip 可能跳掉最后一个日期，强制补上
+            if (isMobile) {
+              const lastIdx = totalLabels - 1
+              const hasLast = axis.ticks.some(t => t.value === lastIdx)
+              if (!hasLast) {
+                axis.ticks.push({ value: lastIdx, label: labels[lastIdx] })
+              }
             }
           }
         },
