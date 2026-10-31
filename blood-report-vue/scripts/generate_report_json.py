@@ -140,6 +140,51 @@ def read_ldh_cart_data(excel_path):
     return ldh_records, cart_dates, cart_data
 
 
+def read_ct_data(excel_path):
+    """读取CT检查结果（PET-CT 与 增强CT 分开返回）
+
+    返回:
+        {'petCt': [...], 'contrastCt': [...]}
+        每条记录: {date, method, size, suvmax}
+    """
+    result = {'petCt': [], 'contrastCt': []}
+    wb = load_workbook(excel_path, data_only=True)
+
+    ws = None
+    for sheet_name in wb.sheetnames:
+        if 'CT' in sheet_name.upper():
+            ws = wb[sheet_name]
+            break
+    if ws is None:
+        return result
+
+    # 第一行是表头: 时间 / 检测手段 / 尺寸 / SUVmax
+    for row in ws.iter_rows(min_row=2, values_only=True):
+        if not row or not row[0]:
+            continue
+
+        date_val = str(row[0]).replace(',', '').strip()
+        method = str(row[1]).strip() if row[1] else ''
+        size = str(row[2]).strip() if row[2] else ''
+
+        suvmax = None
+        if len(row) > 3 and row[3] is not None:
+            try:
+                suvmax = float(str(row[3]).replace(',', '').strip())
+            except (ValueError, TypeError):
+                suvmax = None
+
+        record = {'date': date_val, 'method': method, 'size': size, 'suvmax': suvmax}
+
+        if 'PET' in method.upper():
+            result['petCt'].append(record)
+        elif '增强' in method:
+            result['contrastCt'].append(record)
+
+    wb.close()
+    return result
+
+
 def generate_report_json(blood_excel, ldh_cart_excel, output_path):
     """生成标准化的report.json"""
     report = {
@@ -177,6 +222,10 @@ def generate_report_json(blood_excel, ldh_cart_excel, output_path):
                 'cd4CarTNum': {'label': 'CD4+Car-T#', 'unit': '个/μL', 'reference': '0~0', 'values': []},
                 'cd8CarTNum': {'label': 'CD8+Car-T#', 'unit': '个/μL', 'reference': '0~0', 'values': []}
             }
+        },
+        'tumor': {
+            'petCt': [],
+            'contrastCt': []
         }
     }
 
@@ -193,8 +242,10 @@ def generate_report_json(blood_excel, ldh_cart_excel, output_path):
         report['ldh']['records'] = ldh_records
         report['cart']['dates'] = cart_dates
         report['cart']['records'] = cart_data
+        report['tumor'] = read_ct_data(ldh_cart_excel)
         print(f"✓ 已读取LDH数据: {len(ldh_records)} 条记录")
         print(f"✓ 已读取Cart数据: {len(cart_dates)} 个日期")
+        print(f"✓ 已读取CT数据: PET-CT {len(report['tumor']['petCt'])} 条, 增强CT {len(report['tumor']['contrastCt'])} 条")
     else:
         print(f"⚠ LDH/Cart文件不存在: {ldh_cart_excel}")
 

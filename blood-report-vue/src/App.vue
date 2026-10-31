@@ -23,6 +23,7 @@
       />
       <TumorSizeTab
         v-show="activeTab === 'tumor'"
+        :tumor-data="tumorData"
       />
     </div>
   </div>
@@ -58,6 +59,9 @@ const ldhData = computed(() => reportData.ldh.records)
 // Cart数据
 const cartDates = computed(() => reportData.cart.dates)
 const cartData = computed(() => reportData.cart.records)
+
+// 肿瘤大小数据（PET-CT 与增强CT 分表展示）
+const tumorData = computed(() => reportData.tumor || { petCt: [], contrastCt: [] })
 </script>
 
 <style>

@@ -1,43 +1,60 @@
 <template>
   <div class="tumor-tab">
-    <SectionCard title="肿瘤大小变化">
+    <SectionCard title="PET-CT 检查">
       <DataTable
-        :columns="columns"
-        :data="tumorData"
+        :columns="petColumns"
+        :data="petCt"
+      />
+    </SectionCard>
+
+    <SectionCard title="增强CT 检查">
+      <DataTable
+        :columns="ctColumns"
+        :data="contrastCt"
       />
     </SectionCard>
 
     <div class="tumor-summary">
-      <p>📊 <strong>趋势总结：</strong>肿瘤尺寸从 84mm×63mm×89mm 变化至 38mm×62mm×62mm，整体较治疗前明显缩小。</p>
+      <p>📊 <strong>趋势总结：</strong>PET-CT 病灶由 84mm×63mm×89mm（SUVmax 28.7）缩小至 43mm×31mm×51mm（SUVmax 3.6）；增强CT 病灶由 43mm×61mm×58mm 缩小至 32mm×49mm×46mm，整体均呈持续缩小趋势。</p>
     </div>
 
     <div class="tumor-footer">
-      <p>📝 <strong>数据来源：</strong>PET-CT / 增强CT 报告</p>
-      <p>📅 <strong>更新日期：</strong>2026-09-26</p>
+      <p>📝 <strong>说明：</strong>PET-CT 与增强CT 的测量方式不同，两类结果分表展示，各自进行纵向对比，不做跨方式直接比较。</p>
+      <p>📝 <strong>数据来源：</strong>LDH_Cart.xlsx「CT结果」表</p>
+      <p>📅 <strong>更新日期：</strong>2026-10-31</p>
     </div>
   </div>
 </template>
 
 <script setup>
+import { computed } from 'vue'
 import SectionCard from '../common/SectionCard.vue'
 import DataTable from '../common/DataTable.vue'
 
-const columns = [
+const props = defineProps({
+  tumorData: {
+    type: Object,
+    default: () => ({ petCt: [], contrastCt: [] })
+  }
+})
+
+const petColumns = [
   { key: 'date', label: '时间' },
-  { key: 'method', label: '检测手段' },
+  { key: 'size', label: '尺寸' },
+  { key: 'suvmax', label: 'SUVmax' }
+]
+
+const ctColumns = [
+  { key: 'date', label: '时间' },
   { key: 'size', label: '尺寸' }
 ]
 
-const tumorData = [
-  { date: '2026.01.22', method: 'PET-CT', size: '84mm×63mm×89mm' },
-  { date: '2026.02.25', method: 'PET-CT', size: '82mm×50mm×82mm' },
-  { date: '2026.03.27', method: 'PET-CT', size: '73mm×47mm×79mm' },
-  { date: '2026.04.27', method: 'PET-CT', size: '68mm×45mm×75mm' },
-  { date: '2026.05.07', method: '增强CT', size: '43mm×61mm×58mm' },
-  { date: '2026.06.10', method: '增强CT', size: '36mm×69mm×70mm' },
-  { date: '2026.08.03', method: 'PET-CT', size: '68mm×44mm×72mm' },
-  { date: '2026.08.12', method: '增强CT', size: '38mm×62mm×62mm' }
-]
+const petCt = computed(() => (props.tumorData.petCt || []).map(row => ({
+  ...row,
+  suvmax: row.suvmax ?? '—'
+})))
+
+const contrastCt = computed(() => props.tumorData.contrastCt || [])
 </script>
 
 <style scoped>
